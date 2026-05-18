@@ -60,7 +60,7 @@ class PostViewHolder(
 
             val avatarUrl = post.authorAvatar?.takeIf {
                 it.isNotBlank()
-            }?.let { "$BASE_URL/avatars/$it" }
+            }?.let { "${BASE_URL}avatars/$it" }
 
             Glide.with(avatar.context)
                 .load(avatarUrl)

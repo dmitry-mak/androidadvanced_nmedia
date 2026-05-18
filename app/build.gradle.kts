@@ -27,9 +27,11 @@ android {
                 "proguard-rules.pro"
             )
             manifestPlaceholders["usesCleartextTraffic"] = false
+            buildConfigField("String", "BASE_URL", "\"https://netology.ru\"")
         }
         debug {
             manifestPlaceholders["usesCleartextTraffic"] = true
+            buildConfigField("String", "BASE_URL", "\"http://10.0.2.2:9999\"")
         }
     }
     compileOptions {
@@ -42,6 +44,7 @@ android {
 
     buildFeatures {
         viewBinding = true
+        buildConfig = true
     }
 }
 
@@ -59,6 +62,9 @@ dependencies {
 
     implementation(libs.androidx.room)
     ksp(libs.androidx.room.compiler)
+
+    implementation(libs.converter.gson)
+    implementation(libs.logging.interceptor)
 
     implementation(platform (libs.firebase))
     implementation(libs.firebase.messaging)
