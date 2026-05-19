@@ -27,18 +27,28 @@ class PostRepositoryImpl(
         id: Long,
         isLiked: Boolean
     ): Post {
-        val post = if (isLiked) {
-            PostApi.service.unlikeById(id)
-        } else {
-            PostApi.service.likeById(id)
+        dao.likeById(id)
+
+        try {
+            val post = if (isLiked) {
+                PostApi.service.unlikeById(id)
+            } else {
+                PostApi.service.likeById(id)
+            }
+
+            dao.insert(PostEntity.fromDto(post))
+            return post
+        } catch (
+            e: Exception
+        ) {
+            dao.likeById(id)
+            throw e
         }
-        dao.insert(PostEntity.fromDto(post))
-        return post
     }
 
     override suspend fun removeByIdAsync(id: Long) {
-        PostApi.service.deleteById(id)
         dao.removeById(id)
+        PostApi.service.deleteById(id)
     }
 
     override suspend fun saveAsync(post: Post): Post {
@@ -189,8 +199,8 @@ class PostRepositoryImpl(
 }
 
 
-data class ApiError(
-    val code: Int,
-    val httpMessage: String,
-    val body: String? = null
-) : Exception("HTTP $code: $httpMessage")
+//data class ApiError(
+//    val code: Int,
+//    val httpMessage: String,
+//    val body: String? = null
+//) : Exception("HTTP $code: $httpMessage")

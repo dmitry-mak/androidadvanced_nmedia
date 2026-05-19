@@ -7,12 +7,12 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.map
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.launch
+import retrofit2.HttpException
 import ru.netology.nmedia.db.AppDb
 import java.io.IOException
 import ru.netology.nmedia.dto.Post
 import ru.netology.nmedia.model.FeedModel
 import ru.netology.nmedia.model.FeedModelState
-import ru.netology.nmedia.repository.ApiError
 import ru.netology.nmedia.repository.PostRepository
 import ru.netology.nmedia.repository.PostRepositoryImpl
 
@@ -74,26 +74,29 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-fun refresh() {
-    viewModelScope.launch {
-        _state.value = FeedModelState(refreshing = true)
+    fun refresh() {
+        viewModelScope.launch {
+            _state.value = FeedModelState(refreshing = true)
 
-        runCatching {
-            repository.getAllDataAsync()
-        }.onSuccess {
-            _state.value = FeedModelState()
-        }.onFailure { error ->
-            _state.value = FeedModelState(error = true)
-            handleError(error)
+            runCatching {
+                repository.getAllDataAsync()
+            }.onSuccess {
+                _state.value = FeedModelState()
+            }.onFailure { error ->
+                _state.value = FeedModelState(error = true)
+                handleError(error)
+            }
         }
     }
-}
+
     fun like(id: Long, isLiked: Boolean) {
         lastRetryAction = { like(id, isLiked) }
 
         viewModelScope.launch {
             runCatching {
                 repository.likeAsync(id, isLiked)
+            }.onSuccess {
+                lastRetryAction = null
             }.onFailure { error ->
                 handleError(error)
             }
@@ -135,28 +138,30 @@ fun refresh() {
         viewModelScope.launch {
             runCatching {
                 repository.removeByIdAsync(id)
+            }.onSuccess {
+                lastRetryAction = null
             }.onFailure { error ->
                 handleError(error)
             }
         }
     }
 
-    fun save(text: String){
+    fun save(text: String) {
         val current = edited.value ?: return
         val trimmed = text.trim()
 
-        if(trimmed.isBlank()){
-            edited.value=empty
+        if (trimmed.isBlank()) {
+            edited.value = empty
             clearDraftPost()
             return
         }
-        lastRetryAction = {save(text)}
+        lastRetryAction = { save(text) }
 
         viewModelScope.launch {
             runCatching {
                 repository.saveAsync(current.copy(content = trimmed))
             }.onSuccess {
-                edited.value =empty
+                edited.value = empty
                 clearDraftPost()
             }.onFailure { error ->
                 handleError(error)
@@ -210,15 +215,15 @@ fun refresh() {
         draftPost.postValue("")
     }
 
-    fun handleError(e: Throwable) {
-        val message = when (e) {
-            is ApiError -> when (e.code) {
+    fun handleError(error: Throwable) {
+        val message = when (error) {
+            is HttpException -> when (error.code()) {
                 in 300..309 -> "Ошибка редиректа"
                 400 -> "Неверный формат"
                 401 -> "Текст для ошибки 401"
                 404 -> "Ресурс не найден"
-                in 500..509 -> "Серверная ошибка - ${e.code}"
-                else -> "Неизвестная ошибка- ${e.code} - ${e.message}"
+                in 500..509 -> "Серверная ошибка - ${error.code()}"
+                else -> "Неизвестная ошибка- ${error.code()} - ${error.message()}"
             }
 
             is IOException -> "Отсутствует подключение к интернету"

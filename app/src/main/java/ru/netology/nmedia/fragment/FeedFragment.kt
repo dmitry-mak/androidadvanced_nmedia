@@ -114,7 +114,8 @@ class FeedFragment : Fragment() {
         }
 
         binding.swipeRefresh.setOnRefreshListener {
-            viewModel.load()
+//            viewModel.load()
+        viewModel.refresh()
         }
     }
 }
