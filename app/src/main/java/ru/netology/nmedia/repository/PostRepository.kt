@@ -24,8 +24,4 @@ interface PostRepository {
 
     suspend fun share(id: Long)
 
-//    interface PostCallback<T> {
-//        fun onSuccess(result: T)
-//        fun onError(error: Throwable)
-//    }
 }

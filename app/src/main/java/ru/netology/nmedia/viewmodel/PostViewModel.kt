@@ -62,15 +62,6 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
                 _state.value = FeedModelState(error = true)
                 handleError(error)
             }
-//        repository.getAllDataAsync(object : PostRepository.PostCallback<List<Post>> {
-//            override fun onSuccess(posts: List<Post>) {
-//                _state.postValue(FeedModel(posts = posts, empty = posts.isEmpty()))
-//            }
-//
-//            override fun onError(e: Throwable) {
-//                _state.postValue(FeedModel(error = true))
-//            }
-//        })
         }
     }
 
@@ -101,25 +92,6 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
                 handleError(error)
             }
         }
-//        repository.likeAsync(id, isLiked, object : PostRepository.PostCallback<Post> {
-//            override fun onSuccess(post: Post) {
-//                val currentPosts = _state.value?.posts ?: emptyList()
-//                val updatedPosts = currentPosts.map { currentPost ->
-//                    if (currentPost.id == post.id) post else currentPost
-//                }
-//                _state.postValue(
-//                    FeedModel(
-//                        posts = updatedPosts,
-//                        empty = updatedPosts.isEmpty()
-//                    )
-//                )
-//            }
-//
-//            override fun onError(e: Throwable) {
-//                handleError(e)
-//            }
-//
-//        })
     }
 
     fun share(id: Long) {
@@ -169,36 +141,6 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    /*
-    fun save(text: String) {
-        viewModelScope.launch {
-            edited.value?.let {
-                repository.saveAsync(it.copy(content = text.trim()))
-
-            }
-            edited.value = empty
-        }
-//        edited.value?.let { current ->
-//            if (current.content != text) {
-//                lastRetryAction = { save(text) }
-//                repository.saveAsync(
-//                    current.copy(content = text.trim()),
-//                    object : PostRepository.PostCallback<Post> {
-//                        override fun onSuccess(post: Post) {
-//                            load()
-//                            edited.postValue(empty)
-//                            clearDraftPost()
-//                        }
-//
-//                        override fun onError(e: Throwable) {
-//                            handleError(e)
-//                        }
-//                    }
-//                )
-//            }
-//        }
-    }
-     */
     fun edit(post: Post) {
         edited.value = post
     }

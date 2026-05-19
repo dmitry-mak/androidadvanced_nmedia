@@ -85,10 +85,7 @@ class FeedFragment : Fragment() {
     private fun setupObservers() {
         viewModel.data.observe(viewLifecycleOwner) { model ->
             adapter.submitList(model.posts)
-//            binding.errorGroup.isVisible = state.error
-//            binding.progress.isVisible = state.loading
             binding.empty.isVisible = model.empty
-//            binding.swipeRefresh.isRefreshing = false
         }
         viewModel.state.observe(viewLifecycleOwner){ state ->
             binding.errorGroup.isVisible = state.error
@@ -114,7 +111,6 @@ class FeedFragment : Fragment() {
         }
 
         binding.swipeRefresh.setOnRefreshListener {
-//            viewModel.load()
         viewModel.refresh()
         }
     }
