@@ -83,12 +83,17 @@ class FeedFragment : Fragment() {
     }
 
     private fun setupObservers() {
-        viewModel.data.observe(viewLifecycleOwner) { state ->
-            adapter.submitList(state.posts)
+        viewModel.data.observe(viewLifecycleOwner) { model ->
+            adapter.submitList(model.posts)
+//            binding.errorGroup.isVisible = state.error
+//            binding.progress.isVisible = state.loading
+            binding.empty.isVisible = model.empty
+//            binding.swipeRefresh.isRefreshing = false
+        }
+        viewModel.state.observe(viewLifecycleOwner){ state ->
             binding.errorGroup.isVisible = state.error
-            binding.progress.isVisible = state.loading
-            binding.empty.isVisible = state.empty
-            binding.swipeRefresh.isRefreshing = false
+            binding.progress.isVisible =state.isLoading
+            binding.swipeRefresh.isRefreshing = state.refreshing
         }
         viewModel.actionError.observe(viewLifecycleOwner){ message ->
             message?.let {
