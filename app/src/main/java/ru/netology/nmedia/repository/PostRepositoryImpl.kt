@@ -2,6 +2,13 @@ package ru.netology.nmedia.repository
 
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.map
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.map
+import retrofit2.HttpException
 import ru.netology.nmedia.api.PostApi
 import ru.netology.nmedia.dao.PostDao
 import ru.netology.nmedia.dto.Post
@@ -11,14 +18,38 @@ import kotlin.collections.map
 class PostRepositoryImpl(
     private val dao: PostDao
 ) : PostRepository {
-    override val posts: LiveData<List<Post>> = dao.getAll().map {
-        it.map(PostEntity::toDto)
+//    override val posts: LiveData<List<Post>> = dao.getAll().map {
+//        it.map(PostEntity::toDto)
+
+    override val posts = dao.getAll().map {
+        it.map {
+            it.toDto()
+        }
     }
 
     override suspend fun getAllDataAsync() {
         val posts = PostApi.service.getAllData()
         dao.insert(posts.map(PostEntity::fromDto))
     }
+
+    override fun getNewer(id: Long): Flow<Int> = flow {
+        while (true) {
+            delay(10_000)
+
+            val response = PostApi.service.getNewer(id)
+
+            if (!response.isSuccessful) {
+                throw HttpException(response)
+            }
+
+            val body = response.body().orEmpty()
+
+            if (body.isNotEmpty()) {
+                dao.insert(body.map(PostEntity::fromDto))
+            }
+            emit(body.size)
+        }
+    }.flowOn(Dispatchers.Default)
 
     override suspend fun likeAsync(
         id: Long,
@@ -57,4 +88,6 @@ class PostRepositoryImpl(
     override suspend fun share(id: Long) {
 
     }
+
+
 }

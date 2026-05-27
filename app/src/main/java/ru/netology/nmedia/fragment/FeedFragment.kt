@@ -101,7 +101,9 @@ class FeedFragment : Fragment() {
                     }
                     .show()
             }
-
+        }
+        viewModel.newerCount.observe(viewLifecycleOwner){
+            println(it)
         }
     }
 
