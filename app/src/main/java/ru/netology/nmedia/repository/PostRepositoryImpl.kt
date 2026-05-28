@@ -1,7 +1,5 @@
 package ru.netology.nmedia.repository
 
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.map
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
@@ -18,34 +16,44 @@ import kotlin.collections.map
 class PostRepositoryImpl(
     private val dao: PostDao
 ) : PostRepository {
-//    override val posts: LiveData<List<Post>> = dao.getAll().map {
-//        it.map(PostEntity::toDto)
 
     override val posts = dao.getAll().map {
         it.map {
             it.toDto()
         }
     }
+    override val newerCount: Flow<Int> =
+        dao.getHiddenCount()
+            .flowOn(Dispatchers.Default)
+
 
     override suspend fun getAllDataAsync() {
         val posts = PostApi.service.getAllData()
+        dao.clear()
         dao.insert(posts.map(PostEntity::fromDto))
+    }
+
+    override suspend fun showNewer() {
+        dao.showHidden()
     }
 
     override fun getNewer(id: Long): Flow<Int> = flow {
         while (true) {
-            delay(10_000)
+            delay(10_000L)
 
-            val response = PostApi.service.getNewer(id)
+            val  lastId = dao.getMaxId() ?: id
+            val response = PostApi.service.getNewer(lastId)
 
-            if (!response.isSuccessful) {
+            if(!response.isSuccessful){
                 throw HttpException(response)
             }
 
             val body = response.body().orEmpty()
 
-            if (body.isNotEmpty()) {
-                dao.insert(body.map(PostEntity::fromDto))
+            if (body.isNotEmpty()){
+                dao.insert(body.map {
+                    PostEntity.fromDto(it, hidden = true)
+                })
             }
             emit(body.size)
         }
@@ -56,7 +64,6 @@ class PostRepositoryImpl(
         isLiked: Boolean
     ): Post {
         dao.likeById(id)
-
         try {
             val post = if (isLiked) {
                 PostApi.service.unlikeById(id)

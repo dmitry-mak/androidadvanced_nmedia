@@ -5,7 +5,6 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.asLiveData
-import androidx.lifecycle.map
 import androidx.lifecycle.switchMap
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
@@ -45,12 +44,13 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
         .catch { it.printStackTrace() }
         .asLiveData(Dispatchers.Default)
 
-    val newerCount: LiveData<Int> = data.switchMap {
+    val newerCount: LiveData<Int> =repository.newerCount
+        .asLiveData(Dispatchers.Default)
+
+    val newerPolling: LiveData<Int> = data.switchMap {
         repository.getNewer(it.posts.firstOrNull()?.id ?: 0L)
             .catch { error ->
-//                _state.value = FeedModelState(error = true)
                 _state.postValue(FeedModelState(error = true))
-                handleError(error)
             }
             .asLiveData(Dispatchers.Default)
     }
@@ -95,6 +95,12 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
                 _state.value = FeedModelState(error = true)
                 handleError(error)
             }
+        }
+    }
+
+    fun showNewer(){
+        viewModelScope.launch {
+            repository.showNewer()
         }
     }
 
