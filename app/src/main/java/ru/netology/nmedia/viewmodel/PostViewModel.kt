@@ -49,7 +49,7 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
 
     val newerPolling: LiveData<Int> = data.switchMap {
         repository.getNewer(it.posts.firstOrNull()?.id ?: 0L)
-            .catch { error ->
+            .catch {
                 _state.postValue(FeedModelState(error = true))
             }
             .asLiveData(Dispatchers.Default)
