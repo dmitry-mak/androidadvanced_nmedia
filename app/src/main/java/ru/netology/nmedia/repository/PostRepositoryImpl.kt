@@ -17,20 +17,43 @@ class PostRepositoryImpl(
     private val dao: PostDao
 ) : PostRepository {
 
-    override val posts = dao.getAll().map {
-        it.map {
-            it.toDto()
-        }
-    }
+    //    override val posts = dao.getAll().map {
+//        it.map {
+//            it.toDto()
+//        }
+//    }
+    override val posts: Flow<List<Post>> = dao.getAll()
+        .map { entities ->
+            entities.map(PostEntity::toDto)
+        }.flowOn(Dispatchers.Default)
+
+
     override val newerCount: Flow<Int> =
         dao.getHiddenCount()
             .flowOn(Dispatchers.Default)
 
 
+//    override suspend fun getAllDataAsync() {
+//        val posts = PostApi.service.getAllData()
+//        dao.clear()
+//        dao.insert(posts.map(PostEntity::fromDto))
+//    }
+
     override suspend fun getAllDataAsync() {
+        val maxId = dao.getMaxId()
+        val hiddenPostsId = dao.getHiddenPostsId().toSet()
         val posts = PostApi.service.getAllData()
+
         dao.clear()
-        dao.insert(posts.map(PostEntity::fromDto))
+
+        dao.insert(
+            posts.map { post ->
+                PostEntity.fromDto(
+                    post = post,
+                    hidden = post.id in hiddenPostsId || (maxId != null && post.id > maxId)
+                )
+            }
+        )
     }
 
     override suspend fun showNewer() {
@@ -41,16 +64,16 @@ class PostRepositoryImpl(
         while (true) {
             delay(10_000L)
 
-            val  lastId = dao.getMaxId() ?: id
+            val lastId = dao.getMaxId() ?: id
             val response = PostApi.service.getNewer(lastId)
 
-            if(!response.isSuccessful){
+            if (!response.isSuccessful) {
                 throw HttpException(response)
             }
 
             val body = response.body().orEmpty()
 
-            if (body.isNotEmpty()){
+            if (body.isNotEmpty()) {
                 dao.insert(body.map {
                     PostEntity.fromDto(it, hidden = true)
                 })

@@ -15,6 +15,9 @@ interface PostDao {
     @Query("SELECT COUNT(*) FROM PostEntity WHERE hidden = 1")
     fun getHiddenCount(): Flow<Int>
 
+    @Query ("SELECT id FROM PostEntity WHERE hidden = 1")
+    suspend fun getHiddenPostsId(): List<Long>
+
     @Query("UPDATE PostEntity SET hidden = 0 WHERE hidden = 1")
     suspend fun showHidden()
 
