@@ -4,8 +4,12 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.map
+import androidx.lifecycle.asLiveData
+import androidx.lifecycle.switchMap
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import retrofit2.HttpException
 import ru.netology.nmedia.db.AppDb
@@ -30,7 +34,6 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
     private val repository: PostRepository = PostRepositoryImpl(
         AppDb.getInstance(application).postDao
     )
-
     private val _state = MutableLiveData(FeedModelState())
     val state: LiveData<FeedModelState>
         get() = _state
@@ -38,9 +41,22 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
     val data: LiveData<FeedModel> = repository.posts.map {
         FeedModel(posts = it, empty = it.isEmpty())
     }
+        .catch { it.printStackTrace() }
+        .asLiveData(Dispatchers.Default)
 
+    val newerCount: LiveData<Int> =repository.newerCount
+        .asLiveData(Dispatchers.Default)
+
+    val newerPolling: LiveData<Int> = data.switchMap {
+        repository.getNewer(it.posts.firstOrNull()?.id ?: 0L)
+            .catch {
+                _state.postValue(FeedModelState(error = true))
+            }
+            .asLiveData(Dispatchers.Default)
+    }
     private val _actionError = MutableLiveData<String?>()
-    val actionError: LiveData<String?> get() = _actionError
+    val actionError: LiveData<String?>
+        get() = _actionError
 
     val edited = MutableLiveData(empty)
 
@@ -57,11 +73,13 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
             _state.value = FeedModelState(isLoading = true)
             runCatching {
                 repository.getAllDataAsync()
-                _state.value = FeedModelState()
-            }.onFailure { error ->
-                _state.value = FeedModelState(error = true)
-                handleError(error)
             }
+                .onSuccess {
+                    _state.value = FeedModelState()
+                }.onFailure { error ->
+                    _state.value = FeedModelState(error = true)
+                    handleError(error)
+                }
         }
     }
 
@@ -77,6 +95,12 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
                 _state.value = FeedModelState(error = true)
                 handleError(error)
             }
+        }
+    }
+
+    fun showNewer(){
+        viewModelScope.launch {
+            repository.showNewer()
         }
     }
 
@@ -135,7 +159,10 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
             }.onSuccess {
                 edited.value = empty
                 clearDraftPost()
+                _state.value = FeedModelState()
+                lastRetryAction = null
             }.onFailure { error ->
+                _state.value = FeedModelState(error = true)
                 handleError(error)
             }
         }
@@ -143,18 +170,22 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
 
     fun edit(post: Post) {
         edited.value = post
+        draftPost.value = post.content
     }
 
     fun cancelEditing() {
         edited.value = empty
+        clearDraftPost()
     }
 
     fun setDraftPost(text: String) {
-        draftPost.postValue(text)
+//        draftPost.postValue(text)
+        draftPost.value = text
     }
 
     fun clearDraftPost() {
-        draftPost.postValue("")
+//        draftPost.postValue("")
+        draftPost.value = ""
     }
 
     fun handleError(error: Throwable) {
@@ -172,6 +203,7 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
             else -> "Ошибка. Попробуйте снова"
         }
         _actionError.postValue(message)
+//        _actionError.value = message
     }
 
     fun retryLastAction() {

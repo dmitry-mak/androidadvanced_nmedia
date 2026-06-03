@@ -1,7 +1,12 @@
 package ru.netology.nmedia.repository
 
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.map
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.map
+import retrofit2.HttpException
 import ru.netology.nmedia.api.PostApi
 import ru.netology.nmedia.dao.PostDao
 import ru.netology.nmedia.dto.Post
@@ -11,21 +16,77 @@ import kotlin.collections.map
 class PostRepositoryImpl(
     private val dao: PostDao
 ) : PostRepository {
-    override val posts: LiveData<List<Post>> = dao.getAll().map {
-        it.map(PostEntity::toDto)
-    }
+
+    //    override val posts = dao.getAll().map {
+//        it.map {
+//            it.toDto()
+//        }
+//    }
+    override val posts: Flow<List<Post>> = dao.getAll()
+        .map { entities ->
+            entities.map(PostEntity::toDto)
+        }.flowOn(Dispatchers.Default)
+
+
+    override val newerCount: Flow<Int> =
+        dao.getHiddenCount()
+            .flowOn(Dispatchers.Default)
+
+
+//    override suspend fun getAllDataAsync() {
+//        val posts = PostApi.service.getAllData()
+//        dao.clear()
+//        dao.insert(posts.map(PostEntity::fromDto))
+//    }
 
     override suspend fun getAllDataAsync() {
+        val maxId = dao.getMaxId()
+        val hiddenPostsId = dao.getHiddenPostsId().toSet()
         val posts = PostApi.service.getAllData()
-        dao.insert(posts.map(PostEntity::fromDto))
+
+        dao.clear()
+
+        dao.insert(
+            posts.map { post ->
+                PostEntity.fromDto(
+                    post = post,
+                    hidden = post.id in hiddenPostsId || (maxId != null && post.id > maxId)
+                )
+            }
+        )
     }
+
+    override suspend fun showNewer() {
+        dao.showHidden()
+    }
+
+    override fun getNewer(id: Long): Flow<Int> = flow {
+        while (true) {
+            delay(10_000L)
+
+            val lastId = dao.getMaxId() ?: id
+            val response = PostApi.service.getNewer(lastId)
+
+            if (!response.isSuccessful) {
+                throw HttpException(response)
+            }
+
+            val body = response.body().orEmpty()
+
+            if (body.isNotEmpty()) {
+                dao.insert(body.map {
+                    PostEntity.fromDto(it, hidden = true)
+                })
+            }
+            emit(body.size)
+        }
+    }.flowOn(Dispatchers.Default)
 
     override suspend fun likeAsync(
         id: Long,
         isLiked: Boolean
     ): Post {
         dao.likeById(id)
-
         try {
             val post = if (isLiked) {
                 PostApi.service.unlikeById(id)
@@ -57,4 +118,6 @@ class PostRepositoryImpl(
     override suspend fun share(id: Long) {
 
     }
+
+
 }
