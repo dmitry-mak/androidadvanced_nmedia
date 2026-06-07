@@ -71,10 +71,12 @@ dependencies {
 
     implementation(libs.okhttp)
     implementation(libs.play.services)
+    implementation(libs.imagepicker)
+    implementation(libs.ucrop)
     coreLibraryDesugaring(libs.desugaring)
 
-    implementation("com.github.bumptech.glide:glide:4.16.0")
-    implementation("com.squareup.picasso:picasso:2.71828")
+    implementation(libs.glide)
+    implementation(libs.picasso)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

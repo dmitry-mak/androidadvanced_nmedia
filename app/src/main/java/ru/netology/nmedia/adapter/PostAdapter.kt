@@ -78,7 +78,7 @@ class PostViewHolder(
             if(attachment?.type == AttachmentType.IMAGE) {
                 attachmentImage.visibility = View.VISIBLE
 
-                val attachmentUrl = "${BASE_URL}images/${attachment.url}"
+                val attachmentUrl = "${BASE_URL}media/${attachment.url}"
                 Glide.with(attachmentImage.context)
                     .load(attachmentUrl)
                     .apply (

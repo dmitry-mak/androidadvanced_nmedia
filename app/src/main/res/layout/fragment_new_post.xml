@@ -7,11 +7,99 @@
     android:layout_height="match_parent"
     tools:context=".fragment.NewPostFragment">
 
+    <ScrollView
+        android:id="@+id/contentContainer"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_marginBottom="80dp"
+        android:fillViewport="true">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <EditText
+                android:id="@+id/content"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:minHeight="240dp"
+                android:background="@android:color/transparent"
+                android:gravity="top"
+                android:hint="@string/post_text"
+                android:importantForAutofill="no"
+                android:inputType="textMultiLine"
+                android:padding="16dp" />
+
+            <FrameLayout
+                android:id="@+id/photoContainer"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingStart="@dimen/general_spacing16dp"
+                android:paddingEnd="@dimen/general_spacing16dp"
+                android:paddingBottom="@dimen/general_spacing16dp"
+                android:visibility="gone"
+                tools:visibility="visible">
+
+                <ImageView
+                    android:id="@+id/photo"
+                    android:layout_width="match_parent"
+                    android:layout_height="240dp"
+                    android:contentDescription="Selected photo"
+                    android:scaleType="centerCrop"
+                    tools:src="@drawable/netology_48dp" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/removePhoto"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="bottom|center_horizontal"
+                    android:backgroundTint="?attr/colorSecondaryContainer"
+                    android:layout_margin="8dp"
+                    android:contentDescription="Remove photo"
+                    android:text="Remove"
+                    android:textColor="?attr/colorOnSecondaryContainer"
+                    app:icon="@drawable/ic_cancel_24"
+                    app:iconTint="?attr/colorOnSecondaryContainer"
+                    />
+            </FrameLayout>
+
+        </LinearLayout>
+
+    </ScrollView>
+
     <com.google.android.material.bottomappbar.BottomAppBar
         android:id="@+id/bottomAppBar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_gravity="bottom" />
+        android:layout_gravity="bottom">
+
+        <LinearLayout
+            android:id="@+id/buttonPanel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/pickPhoto"
+                style="@style/Widget.Material3.Button.IconButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:contentDescription="Select photo"
+                app:icon="@drawable/ic_photo_24dp"
+                app:iconTint="?attr/colorOnSurface" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/takePhoto"
+                style="@style/Widget.Material3.Button.IconButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:contentDescription="Take photo"
+                app:icon="@drawable/ic_camera_24dp"
+                app:iconTint="?attr/colorOnSurface" />
+        </LinearLayout>
+    </com.google.android.material.bottomappbar.BottomAppBar>
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/save"
@@ -21,16 +109,5 @@
         app:layout_anchor="@id/bottomAppBar"
         app:srcCompat="@drawable/ic_add_24" />
 
-    <EditText
-        android:id="@+id/content"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_marginBottom="80dp"
-        android:background="@android:color/transparent"
-        android:gravity="top"
-        android:hint="@string/post_text"
-        android:importantForAutofill="no"
-        android:inputType="textMultiLine"
-        android:padding="16dp" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
