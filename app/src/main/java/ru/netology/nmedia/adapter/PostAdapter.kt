@@ -22,6 +22,7 @@ interface OnInteractionListener {
     fun onRemove(post: Post)
     fun onEdit(post: Post)
     fun onOpen(post: Post)
+    fun onImageClick (imageUrl: String)
 }
 
 class PostAdapter(
@@ -86,8 +87,13 @@ class PostViewHolder(
                             .timeout(10000)
                     )
                     .into(attachmentImage)
+
+                attachmentImage.setOnClickListener {
+                    onInteractionListener.onImageClick(attachmentUrl)
+                }
             }else{
                 attachmentImage.visibility= View.GONE
+                attachmentImage.setOnClickListener(null)
                 Glide.with(attachmentImage.context).clear(attachmentImage)
             }
 
