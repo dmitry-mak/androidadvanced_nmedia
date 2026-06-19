@@ -10,4 +10,6 @@
     <string name="editing_post">Редактирование поста</string>
     <string name="author_logo">Аватар автора</string>
     <string name="chooser_share_post">Поделиться</string>
+    <string name="login">Ввести логин</string>
+    <string name="password">Ввести пароль</string>
 </resources>

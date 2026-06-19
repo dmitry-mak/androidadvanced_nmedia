@@ -26,4 +26,10 @@
     <string name="retry" translatable="false">Retry</string>
     <string name="no_posts" translatable="false">No posts yet</string>
     <string name="newer_posts_notification" translatable="false">Новых постов: %1$d</string>
+    <string name="sign_in" translatable="false">Sign in</string>
+    <string name="sign_up" translatable="false">Sign up</string>
+    <string name="sign_out" translatable="false">Sign out</string>
+    <string name="login">Login</string>
+    <string name="password">Password</string>
+    <string name="sign_in_fragment_signin" translatable="false">Sign In</string>
 </resources>

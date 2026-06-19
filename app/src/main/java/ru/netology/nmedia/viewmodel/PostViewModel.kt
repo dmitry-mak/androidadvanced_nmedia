@@ -10,9 +10,11 @@ import androidx.lifecycle.switchMap
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import retrofit2.HttpException
+import ru.netology.nmedia.auth.AppAuth
 import ru.netology.nmedia.db.AppDb
 import ru.netology.nmedia.dto.MediaUpload
 import java.io.IOException
@@ -27,11 +29,13 @@ import java.io.File
 
 private val empty = Post(
     id = 0,
+    authorId = 5L,
     author = "Netology",
     published = 0L,
     content = "",
     likes = 0,
-    likedByMe = false
+    likedByMe = false,
+    ownedByMe = false,
 )
 
 private val noPhoto = PhotoModel()
@@ -45,11 +49,18 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
     val state: LiveData<FeedModelState>
         get() = _state
 
-    val data: LiveData<FeedModel> = repository.posts.map {
-        FeedModel(posts = it, empty = it.isEmpty())
-    }
-        .catch { it.printStackTrace() }
-        .asLiveData(Dispatchers.Default)
+//    val data: LiveData<FeedModel> = repository.posts.map {
+//        FeedModel(posts = it, empty = it.isEmpty())
+//    }
+//        .catch { it.printStackTrace() }
+//        .asLiveData(Dispatchers.Default)
+
+    val data: LiveData<FeedModel> = AppAuth.getInstance().authState
+        .flatMapLatest { (myId, _) ->
+            repository.posts
+                .map { posts -> posts.map { it.copy(ownedByMe = myId == it.authorId) } }
+                .map(::FeedModel)
+        }.asLiveData(Dispatchers.Default)
 
     val newerCount: LiveData<Int> = repository.newerCount
         .asLiveData(Dispatchers.Default)
@@ -222,7 +233,7 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun changePhoto(uri: Uri?, file: File?) {
-        _photo.value= PhotoModel(uri,file)
+        _photo.value = PhotoModel(uri, file)
 //        _photo.postValue(PhotoModel(uri, file))
     }
 

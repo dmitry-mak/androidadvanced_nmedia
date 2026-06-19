@@ -4,6 +4,7 @@ import android.view.ViewGroup
 import android.view.LayoutInflater
 import android.view.View
 import androidx.appcompat.widget.PopupMenu
+import androidx.core.view.isVisible
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
@@ -106,6 +107,8 @@ class PostViewHolder(
                 onInteractionListener.onLike(post)
             }
             shareIcon.setOnClickListener { onInteractionListener.onShare(post) }
+
+            moreButton.isVisible = post.ownedByMe
             moreButton.setOnClickListener {
                 PopupMenu(it.context, it).apply {
                     inflate(R.menu.options_post)

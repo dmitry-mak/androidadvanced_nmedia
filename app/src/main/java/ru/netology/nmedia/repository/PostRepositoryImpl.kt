@@ -134,6 +134,7 @@ class PostRepositoryImpl(
             post.copy(
                 attachment = Attachment(
                     url = media.id,
+                    description = null,
                     type = AttachmentType.IMAGE,
                 )
             )
