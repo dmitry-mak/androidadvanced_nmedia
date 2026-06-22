@@ -76,6 +76,15 @@ class FeedFragment : Fragment() {
                     Bundle().apply { putLong(SinglePostFragment.POST_ID, post.id) }
                 )
             }
+
+            override fun onImageClick(imageUrl: String) {
+                findNavController().navigate(
+                    R.id.action_feedFragment_to_imageFullscreenFragment,
+                    Bundle().apply {
+                        putString(ImageFullscreenFragment.IMAGE_URL, imageUrl)
+                    }
+                )
+            }
         })
         binding.list.adapter = adapter
 

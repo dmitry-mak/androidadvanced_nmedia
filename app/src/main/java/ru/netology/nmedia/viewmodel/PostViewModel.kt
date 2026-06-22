@@ -1,6 +1,7 @@
 package ru.netology.nmedia.viewmodel
 
 import android.app.Application
+import android.net.Uri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
@@ -13,12 +14,16 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import retrofit2.HttpException
 import ru.netology.nmedia.db.AppDb
+import ru.netology.nmedia.dto.MediaUpload
 import java.io.IOException
 import ru.netology.nmedia.dto.Post
 import ru.netology.nmedia.model.FeedModel
 import ru.netology.nmedia.model.FeedModelState
+import ru.netology.nmedia.model.PhotoModel
 import ru.netology.nmedia.repository.PostRepository
 import ru.netology.nmedia.repository.PostRepositoryImpl
+import ru.netology.nmedia.utils.SingleLiveEvent
+import java.io.File
 
 private val empty = Post(
     id = 0,
@@ -28,6 +33,8 @@ private val empty = Post(
     likes = 0,
     likedByMe = false
 )
+
+private val noPhoto = PhotoModel()
 
 class PostViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -44,7 +51,7 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
         .catch { it.printStackTrace() }
         .asLiveData(Dispatchers.Default)
 
-    val newerCount: LiveData<Int> =repository.newerCount
+    val newerCount: LiveData<Int> = repository.newerCount
         .asLiveData(Dispatchers.Default)
 
     val newerPolling: LiveData<Int> = data.switchMap {
@@ -59,6 +66,10 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
         get() = _actionError
 
     val edited = MutableLiveData(empty)
+
+    private val _photo = MutableLiveData<PhotoModel>(noPhoto)
+    val photo: LiveData<PhotoModel>
+        get() = _photo
 
     val draftPost = MutableLiveData("")
 
@@ -98,7 +109,7 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun showNewer(){
+    fun showNewer() {
         viewModelScope.launch {
             repository.showNewer()
         }
@@ -153,12 +164,34 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
         }
         lastRetryAction = { save(text) }
 
+//        viewModelScope.launch {
+//            runCatching {
+//                repository.saveAsync(current.copy(content = trimmed))
+//            }.onSuccess {
+//                edited.value = empty
+//                clearDraftPost()
+//                _state.value = FeedModelState()
+//                lastRetryAction = null
+//            }.onFailure { error ->
+//                _state.value = FeedModelState(error = true)
+//                handleError(error)
+//            }
+//        }
+
         viewModelScope.launch {
             runCatching {
-                repository.saveAsync(current.copy(content = trimmed))
+                val post = current.copy(content = trimmed)
+
+                when (val photo = _photo.value) {
+                    noPhoto -> repository.saveAsync(post)
+                    else -> photo?.file?.let { file ->
+                        repository.saveWithAttachment(post, MediaUpload(file))
+                    } ?: repository.saveAsync(post)
+                }
             }.onSuccess {
                 edited.value = empty
                 clearDraftPost()
+                _photo.value = noPhoto
                 _state.value = FeedModelState()
                 lastRetryAction = null
             }.onFailure { error ->
@@ -186,6 +219,11 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
     fun clearDraftPost() {
 //        draftPost.postValue("")
         draftPost.value = ""
+    }
+
+    fun changePhoto(uri: Uri?, file: File?) {
+        _photo.value= PhotoModel(uri,file)
+//        _photo.postValue(PhotoModel(uri, file))
     }
 
     fun handleError(error: Throwable) {

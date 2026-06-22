@@ -17,7 +17,11 @@
         <action
             android:id="@+id/action_feedFragment_to_singlePostFragment"
             app:destination="@id/singlePostFragment" />
+        <action
+            android:id="@+id/action_feedFragment_to_imageFullscreenFragment"
+            app:destination="@+id/imageFullscreenFragment"/>
     </fragment>
+
     <fragment
         android:id="@+id/newPostActivity"
         android:name="ru.netology.nmedia.fragment.NewPostFragment"
@@ -31,4 +35,11 @@
             android:id="@+id/action_singlePostFragment_to_newPostActivity"
             app:destination="@id/newPostActivity" />
     </fragment>
+
+    <fragment
+        android:id="@+id/imageFullscreenFragment"
+        android:name="ru.netology.nmedia.fragment.ImageFullscreenFragment"
+        android:label="ImageFullscreenFragment"
+        />
+
 </navigation>

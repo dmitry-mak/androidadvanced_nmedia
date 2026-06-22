@@ -6,9 +6,15 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
+import okhttp3.MultipartBody
+import okhttp3.RequestBody.Companion.asRequestBody
 import retrofit2.HttpException
 import ru.netology.nmedia.api.PostApi
 import ru.netology.nmedia.dao.PostDao
+import ru.netology.nmedia.dto.Attachment
+import ru.netology.nmedia.dto.AttachmentType
+import ru.netology.nmedia.dto.Media
+import ru.netology.nmedia.dto.MediaUpload
 import ru.netology.nmedia.dto.Post
 import ru.netology.nmedia.entity.PostEntity
 import kotlin.collections.map
@@ -117,6 +123,34 @@ class PostRepositoryImpl(
 
     override suspend fun share(id: Long) {
 
+    }
+
+    override suspend fun saveWithAttachment(
+        post: Post,
+        upload: MediaUpload
+    ): Post {
+        val media = upload(upload)
+        return saveAsync(
+            post.copy(
+                attachment = Attachment(
+                    url = media.id,
+                    type = AttachmentType.IMAGE,
+                )
+            )
+        )
+    }
+
+    override suspend fun upload(upload: MediaUpload): Media {
+
+        val media = MultipartBody.Part.createFormData(
+            "file", upload.file.name, upload.file.asRequestBody()
+        )
+
+        val response = PostApi.service.uploadMedia(media)
+        if (!response.isSuccessful) {
+            throw HttpException(response)
+        }
+        return response.body() ?: throw HttpException(response)
     }
 
 
