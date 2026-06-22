@@ -9,7 +9,9 @@ import androidx.lifecycle.asLiveData
 import androidx.lifecycle.switchMap
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
@@ -55,11 +57,11 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
 //        .asLiveData(Dispatchers.Default)
 
     val data: LiveData<FeedModel> = AppAuth.getInstance().authState
-        .flatMapLatest { (myId, _) ->
-            repository.posts
-                .map { posts -> posts.map { it.copy(ownedByMe = myId == it.authorId) } }
-                .map(::FeedModel)
-        }.asLiveData(Dispatchers.Default)
+        .combine(repository.posts) { (myId, _), posts ->
+            posts.map { it.copy(ownedByMe = myId == it.authorId) }
+        }
+        .map(::FeedModel)
+        .asLiveData(Dispatchers.Default)
 
     val newerCount: LiveData<Int> = repository.newerCount
         .asLiveData(Dispatchers.Default)

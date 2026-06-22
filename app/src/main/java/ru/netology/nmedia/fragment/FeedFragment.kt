@@ -137,6 +137,17 @@ class FeedFragment : Fragment() {
         viewModel.newerPolling.observe(viewLifecycleOwner) {
 
         }
+        findNavController().currentBackStackEntry
+            ?.savedStateHandle
+            ?.getLiveData<Boolean>("loginSuccess")
+            ?.observe(viewLifecycleOwner){ completedSignIn ->
+                if (completedSignIn == true){
+                    handlePendingAction()
+                    findNavController().currentBackStackEntry
+                        ?.savedStateHandle
+                        ?.set("loginSuccess", false)
+                }
+            }
     }
 
     private fun setupListeners() {
@@ -163,7 +174,7 @@ class FeedFragment : Fragment() {
     private fun showAuthRequiredDialod() {
         if (authDialog?.isShowing == true) return
         authDialog = MaterialAlertDialogBuilder(requireContext())
-            .setTitle("This action require sign-in")
+            .setTitle("Operation for signed-in users only")
             .setMessage("Please sign-in to continue")
             .setPositiveButton("Sign-in") { _, _ ->
                 findNavController().navigate(R.id.action_feedFragment_to_signInFragment)

@@ -46,7 +46,7 @@ class SignInFragment : Fragment() {
                 if (state.success) {
                     findNavController().previousBackStackEntry
                         ?.savedStateHandle
-                        ?.set("signInCompleted", true)
+                        ?.set("loginSuccess", true)
                     findNavController().popBackStack()
                     return@observe
                 }
