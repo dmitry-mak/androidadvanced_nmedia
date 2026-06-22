@@ -14,7 +14,9 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.MenuProvider
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.navigation.NavController
 import androidx.navigation.findNavController
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.firebase.messaging.FirebaseMessaging
 import ru.netology.nmedia.R
 import ru.netology.nmedia.auth.AppAuth
@@ -37,7 +39,7 @@ class AppActivity : AppCompatActivity() {
             insets
         }
 
-        viewModel.data.observe(this){
+        viewModel.data.observe(this) {
             invalidateOptionsMenu()
         }
 
@@ -69,7 +71,11 @@ class AppActivity : AppCompatActivity() {
                     }
 
                     R.id.signout -> {
-                        AppAuth.getInstance().removeAuth()
+                        if (navController.currentDestination?.id == R.id.newPostActivity) {
+                            showSignOutConfirmation(navController)
+                        } else {
+                            AppAuth.getInstance().removeAuth()
+                        }
                         true
                     }
 
@@ -98,5 +104,17 @@ class AppActivity : AppCompatActivity() {
             return
         }
         requestPermissions(arrayOf(permission), 1)
+    }
+
+    private fun showSignOutConfirmation(navController: NavController) {
+        MaterialAlertDialogBuilder(this)
+            .setTitle("Sign out")
+            .setMessage("Are you sure you want to quit")
+            .setPositiveButton("Yes") { _, _ ->
+                AppAuth.getInstance().removeAuth()
+                navController.popBackStack()
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
     }
 }

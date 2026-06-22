@@ -60,7 +60,7 @@ class PostViewHolder(
             publishDay.text = DiffMethods.getCurrentDateFormatted(post.published)
             postContent.text = post.content
 
-            val avatarUrl = post.authorAvatar?.takeIf {
+            val avatarUrl = post.authorAvatar.takeIf {
                 it.isNotBlank()
             }?.let { "${BASE_URL}avatars/$it" }
 
