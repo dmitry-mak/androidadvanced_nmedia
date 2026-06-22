@@ -5,16 +5,19 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.appcompat.app.AlertDialog
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.navigation.fragment.findNavController
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import ru.netology.nmedia.R
 import ru.netology.nmedia.adapter.OnInteractionListener
 import ru.netology.nmedia.adapter.PostAdapter
 import ru.netology.nmedia.databinding.FragmentFeedBinding
 import ru.netology.nmedia.dto.Post
+import ru.netology.nmedia.viewmodel.AuthViewModel
 import ru.netology.nmedia.viewmodel.PostViewModel
 
 class FeedFragment : Fragment() {
@@ -23,8 +26,11 @@ class FeedFragment : Fragment() {
     private lateinit var adapter: PostAdapter
 
     private val viewModel: PostViewModel by activityViewModels()
+    private val authViewModel: AuthViewModel by activityViewModels()
 
     private var scrollToTopAfterUpdate = false
+    private var authDialog: AlertDialog? = null
+    private var pendingAction: PendingAction? = null
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -46,7 +52,12 @@ class FeedFragment : Fragment() {
     private fun setupAdapter() {
         adapter = PostAdapter(object : OnInteractionListener {
             override fun onLike(post: Post) {
-                viewModel.like(post.id, post.likedByMe)
+                if (authViewModel.authenticated) {
+                    viewModel.like(post.id, post.likedByMe)
+                } else {
+                    pendingAction = PendingAction.Like(post.id, post.likedByMe)
+                    showAuthRequiredDialod()
+                }
             }
 
             override fun onShare(post: Post) {
@@ -126,11 +137,27 @@ class FeedFragment : Fragment() {
         viewModel.newerPolling.observe(viewLifecycleOwner) {
 
         }
+        findNavController().currentBackStackEntry
+            ?.savedStateHandle
+            ?.getLiveData<Boolean>("loginSuccess")
+            ?.observe(viewLifecycleOwner){ completedSignIn ->
+                if (completedSignIn == true){
+                    handlePendingAction()
+                    findNavController().currentBackStackEntry
+                        ?.savedStateHandle
+                        ?.set("loginSuccess", false)
+                }
+            }
     }
 
     private fun setupListeners() {
         binding.add.setOnClickListener {
-            findNavController().navigate(R.id.action_feedFragment_to_newPostActivity)
+            if (authViewModel.authenticated) {
+                findNavController().navigate(R.id.action_feedFragment_to_newPostActivity)
+            } else {
+                pendingAction = PendingAction.AddPost
+                showAuthRequiredDialod()
+            }
         }
 
         binding.swipeRefresh.setOnRefreshListener {
@@ -142,5 +169,40 @@ class FeedFragment : Fragment() {
             viewModel.showNewer()
 //            binding.list.smoothScrollToPosition(0)
         }
+    }
+
+    private fun showAuthRequiredDialod() {
+        if (authDialog?.isShowing == true) return
+        authDialog = MaterialAlertDialogBuilder(requireContext())
+            .setTitle("Operation for signed-in users only")
+            .setMessage("Please sign-in to continue")
+            .setPositiveButton("Sign-in") { _, _ ->
+                findNavController().navigate(R.id.action_feedFragment_to_signInFragment)
+            }
+            .setNegativeButton("Cancel", null)
+            .setOnDismissListener { authDialog = null }
+            .show()
+    }
+
+    private fun handlePendingAction() {
+        when (val action = pendingAction) {
+            PendingAction.AddPost -> findNavController()
+                .navigate(R.id.action_feedFragment_to_newPostActivity)
+
+            is PendingAction.Like -> viewModel.like(action.postId, action.likedByMe)
+            null -> Unit
+        }
+        pendingAction = null
+    }
+
+    override fun onDestroyView() {
+        authDialog?.dismiss()
+        authDialog = null
+        super.onDestroyView()
+    }
+
+    private sealed interface PendingAction {
+        data object AddPost : PendingAction
+        data class Like(val postId: Long, val likedByMe: Boolean) : PendingAction
     }
 }
