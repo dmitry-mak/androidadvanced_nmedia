@@ -2,10 +2,15 @@ package ru.netology.nmedia.auth
 
 import android.content.Context
 import androidx.core.content.edit
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import javax.inject.Inject
+import javax.inject.Singleton
 
-class AppAuth private constructor(context: Context) {
+@Singleton
+class AppAuth @Inject constructor(
+    @ApplicationContext private val context: Context) {
 
     private val prefs = context.getSharedPreferences("auth", Context.MODE_PRIVATE)
 
@@ -42,13 +47,13 @@ class AppAuth private constructor(context: Context) {
 
         private const val KEY_ID = "id"
         private const val KEY_TOKEN = "token"
-        private var INSTANCE: AppAuth? = null
+//        private var INSTANCE: AppAuth? = null
 
-        fun getInstance() = INSTANCE ?: throw RuntimeException("call init")
-
-        fun init(context: Context) {
-            INSTANCE = AppAuth(context)
-        }
+//        fun getInstance() = INSTANCE ?: throw RuntimeException("call init")
+//
+//        fun init(context: Context) {
+//            INSTANCE = AppAuth(context)
+//        }
     }
 }
 

@@ -5,9 +5,12 @@ import android.net.Uri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.application
 import androidx.lifecycle.asLiveData
 import androidx.lifecycle.switchMap
 import androidx.lifecycle.viewModelScope
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
@@ -25,6 +28,7 @@ import ru.netology.nmedia.model.PhotoModel
 import ru.netology.nmedia.repository.PostRepository
 import ru.netology.nmedia.repository.PostRepositoryImpl
 import java.io.File
+import javax.inject.Inject
 
 private val empty = Post(
     id = 0,
@@ -39,11 +43,16 @@ private val empty = Post(
 
 private val noPhoto = PhotoModel()
 
-class PostViewModel(application: Application) : AndroidViewModel(application) {
+@HiltViewModel
+class PostViewModel @Inject constructor(
+//    application: Application
+    private val repository: PostRepository,
+    auth: AppAuth
+) : ViewModel() {
 
-    private val repository: PostRepository = PostRepositoryImpl(
-        AppDb.getInstance(application).postDao
-    )
+    //    private val repository: PostRepository = PostRepositoryImpl(
+//        AppDb.getInstance(application).postDao
+//    )
     private val _state = MutableLiveData(FeedModelState())
     val state: LiveData<FeedModelState>
         get() = _state
@@ -54,7 +63,7 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
 //        .catch { it.printStackTrace() }
 //        .asLiveData(Dispatchers.Default)
 
-    val data: LiveData<FeedModel> = AppAuth.getInstance().authState
+    val data: LiveData<FeedModel> = auth.authState
         .combine(repository.posts) { (myId, _), posts ->
             posts.map { it.copy(ownedByMe = myId == it.authorId) }
         }

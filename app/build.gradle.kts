@@ -3,6 +3,7 @@ plugins {
     alias(libs.plugins.jetbrains.kotlin.android)
     alias(libs.plugins.kotlin.ksp)
     alias(libs.plugins.google.services)
+    alias(libs.plugins.dagger.hilt.android)
 }
 
 android {
@@ -66,7 +67,7 @@ dependencies {
     implementation(libs.converter.gson)
     implementation(libs.logging.interceptor)
 
-    implementation(platform (libs.firebase))
+    implementation(platform(libs.firebase))
     implementation(libs.firebase.messaging)
 
     implementation(libs.okhttp)
@@ -78,6 +79,8 @@ dependencies {
     implementation(libs.glide)
     implementation(libs.picasso)
 
+    implementation(libs.hilt.android)
+    ksp(libs.hilt.compiler)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

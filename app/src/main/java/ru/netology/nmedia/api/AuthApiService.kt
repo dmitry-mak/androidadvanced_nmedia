@@ -10,11 +10,11 @@ import retrofit2.http.POST
 import ru.netology.nmedia.BuildConfig
 import ru.netology.nmedia.repository.AuthResponse
 
-private val authRetrofit = Retrofit.Builder()
-    .baseUrl("${BuildConfig.BASE_URL}/api/")
-    .addConverterFactory(GsonConverterFactory.create())
-    .client(OkHttpClient.Builder().build())
-    .build()
+//private val authRetrofit = Retrofit.Builder()
+//    .baseUrl("${BuildConfig.BASE_URL}/api/")
+//    .addConverterFactory(GsonConverterFactory.create())
+//    .client(OkHttpClient.Builder().build())
+//    .build()
 
 interface AuthApiService {
     @FormUrlEncoded
@@ -25,6 +25,6 @@ interface AuthApiService {
     ): Response<AuthResponse>
 }
 
-object AuthApi{
-    val service: AuthApiService by lazy { authRetrofit.create(AuthApiService::class.java) }
-}
+//object AuthApi{
+//    val service: AuthApiService by lazy { authRetrofit.create(AuthApiService::class.java) }
+//}

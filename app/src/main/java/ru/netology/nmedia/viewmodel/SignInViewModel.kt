@@ -4,11 +4,13 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 import retrofit2.HttpException
 import ru.netology.nmedia.auth.AppAuth
 import ru.netology.nmedia.repository.AuthRepository
 import java.io.IOException
+import javax.inject.Inject
 
 
 data class SignInState(
@@ -17,8 +19,11 @@ data class SignInState(
     val success: Boolean = false
 )
 
-class SignInViewModel(
-    private val repository: AuthRepository = AuthRepository()
+@HiltViewModel
+class SignInViewModel @Inject constructor(
+//    private val repository: AuthRepository = AuthRepository()
+    private val repository: AuthRepository,
+    private val auth: AppAuth
 ) : ViewModel() {
     private val _state = MutableLiveData(SignInState())
     val state: LiveData<SignInState>
@@ -39,7 +44,8 @@ class SignInViewModel(
             runCatching {
                 repository.authenticate(loginTrimmed, passwordTrimmed)
             }.onSuccess { (id, token) ->
-                AppAuth.getInstance().setAuth(id, token)
+//                AppAuth.getInstance().setAuth(id, token)
+                auth.setAuth(id, token)
                 _state.value = SignInState(success = true)
             }.onFailure { error ->
                 val errorMessage = when (error) {

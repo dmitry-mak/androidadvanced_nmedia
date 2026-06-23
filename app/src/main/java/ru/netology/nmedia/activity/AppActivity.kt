@@ -18,13 +18,18 @@ import androidx.navigation.NavController
 import androidx.navigation.findNavController
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.firebase.messaging.FirebaseMessaging
+import dagger.hilt.android.AndroidEntryPoint
 import ru.netology.nmedia.R
 import ru.netology.nmedia.auth.AppAuth
 import ru.netology.nmedia.databinding.ActivityAppBinding
 import ru.netology.nmedia.viewmodel.AuthViewModel
+import javax.inject.Inject
 
+@AndroidEntryPoint
 class AppActivity : AppCompatActivity() {
 
+    @Inject
+    lateinit var auth: AppAuth
     private val viewModel by viewModels<AuthViewModel>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -66,7 +71,8 @@ class AppActivity : AppCompatActivity() {
                     }
 
                     R.id.signup -> {
-                        AppAuth.getInstance().setAuth(5, "x-token")
+//                        AppAuth.getInstance().setAuth(5, "x-token")
+                        auth.setAuth(5, "x-token")
                         true
                     }
 
@@ -74,7 +80,8 @@ class AppActivity : AppCompatActivity() {
                         if (navController.currentDestination?.id == R.id.newPostActivity) {
                             showSignOutConfirmation(navController)
                         } else {
-                            AppAuth.getInstance().removeAuth()
+//                            AppAuth.getInstance().removeAuth()
+                            auth.removeAuth()
                         }
                         true
                     }
@@ -111,7 +118,8 @@ class AppActivity : AppCompatActivity() {
             .setTitle("Sign out")
             .setMessage("Are you sure you want to quit")
             .setPositiveButton("Yes") { _, _ ->
-                AppAuth.getInstance().removeAuth()
+//                AppAuth.getInstance().removeAuth()
+                auth.removeAuth()
                 navController.popBackStack()
             }
             .setNegativeButton("Cancel", null)

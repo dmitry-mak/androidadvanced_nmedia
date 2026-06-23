@@ -9,7 +9,8 @@ import kotlinx.coroutines.flow.map
 import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.asRequestBody
 import retrofit2.HttpException
-import ru.netology.nmedia.api.PostApi
+import ru.netology.nmedia.api.PostApiService
+//import ru.netology.nmedia.api.PostApi
 import ru.netology.nmedia.dao.PostDao
 import ru.netology.nmedia.dto.Attachment
 import ru.netology.nmedia.dto.AttachmentType
@@ -17,10 +18,14 @@ import ru.netology.nmedia.dto.Media
 import ru.netology.nmedia.dto.MediaUpload
 import ru.netology.nmedia.dto.Post
 import ru.netology.nmedia.entity.PostEntity
+import javax.inject.Inject
+import javax.inject.Singleton
 import kotlin.collections.map
 
-class PostRepositoryImpl(
-    private val dao: PostDao
+@Singleton
+class PostRepositoryImpl @Inject constructor(
+    private val dao: PostDao,
+    private val apiService: PostApiService
 ) : PostRepository {
 
     //    override val posts = dao.getAll().map {
@@ -48,8 +53,8 @@ class PostRepositoryImpl(
     override suspend fun getAllDataAsync() {
         val maxId = dao.getMaxId()
         val hiddenPostsId = dao.getHiddenPostsId().toSet()
-        val posts = PostApi.service.getAllData()
-
+//        val posts = PostApi.service.getAllData()
+        val posts = apiService.getAllData()
         dao.clear()
 
         dao.insert(
@@ -71,7 +76,8 @@ class PostRepositoryImpl(
             delay(10_000L)
 
             val lastId = dao.getMaxId() ?: id
-            val response = PostApi.service.getNewer(lastId)
+//            val response = PostApi.service.getNewer(lastId)
+            val response = apiService.getNewer(lastId)
 
             if (!response.isSuccessful) {
                 throw HttpException(response)
@@ -95,9 +101,11 @@ class PostRepositoryImpl(
         dao.likeById(id)
         try {
             val post = if (isLiked) {
-                PostApi.service.unlikeById(id)
+//                PostApi.service.unlikeById(id)
+                apiService.unlikeById(id)
             } else {
-                PostApi.service.likeById(id)
+//                PostApi.service.likeById(id)
+                apiService.likeById(id)
             }
 
             dao.insert(PostEntity.fromDto(post))
@@ -112,11 +120,13 @@ class PostRepositoryImpl(
 
     override suspend fun removeByIdAsync(id: Long) {
         dao.removeById(id)
-        PostApi.service.deleteById(id)
+//        PostApi.service.deleteById(id)
+        apiService.deleteById(id)
     }
 
     override suspend fun saveAsync(post: Post): Post {
-        val saved = PostApi.service.save(post)
+//        val saved = PostApi.service.save(post)
+        val saved = apiService.save(post)
         dao.insert(PostEntity.fromDto(saved))
         return saved
     }
@@ -147,7 +157,8 @@ class PostRepositoryImpl(
             "file", upload.file.name, upload.file.asRequestBody()
         )
 
-        val response = PostApi.service.uploadMedia(media)
+//        val response = PostApi.service.uploadMedia(media)
+        val response = apiService.uploadMedia(media)
         if (!response.isSuccessful) {
             throw HttpException(response)
         }

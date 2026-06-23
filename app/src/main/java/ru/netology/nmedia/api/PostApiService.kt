@@ -20,38 +20,37 @@ import ru.netology.nmedia.dto.Media
 import ru.netology.nmedia.dto.Post
 import java.util.concurrent.TimeUnit
 
-//private const val BASE_URL = "http://10.0.2.2:9999/api/slow/"
-private val BASE_URL = "${BuildConfig.BASE_URL}/api/slow/"
-
-private val logging = HttpLoggingInterceptor()
-    .apply {
-        level = if (BuildConfig.DEBUG) {
-            HttpLoggingInterceptor.Level.BODY
-        } else {
-            HttpLoggingInterceptor.Level.NONE
-        }
-    }
-
-private val okhttp = OkHttpClient.Builder()
-    .connectTimeout(30, TimeUnit.SECONDS)
+//private val BASE_URL = "${BuildConfig.BASE_URL}/api/slow/"
+//
+//private val logging = HttpLoggingInterceptor()
+//    .apply {
+//        level = if (BuildConfig.DEBUG) {
+//            HttpLoggingInterceptor.Level.BODY
+//        } else {
+//            HttpLoggingInterceptor.Level.NONE
+//        }
+//    }
+//
+//private val okhttp = OkHttpClient.Builder()
+//    .connectTimeout(30, TimeUnit.SECONDS)
+////    .addInterceptor(logging)
+//    .addInterceptor { chain ->
+//        AppAuth.getInstance().authState.value.takeIf { !it.token.isNullOrEmpty() }?.let {
+//            val newRequest = chain.request().newBuilder()
+//                .addHeader("Authorization", requireNotNull(it.token))
+//                .build()
+//            return@addInterceptor chain.proceed(newRequest)
+//        }
+//        chain.proceed(chain.request())
+//    }
 //    .addInterceptor(logging)
-    .addInterceptor { chain ->
-        AppAuth.getInstance().authState.value.takeIf { !it.token.isNullOrEmpty() }?.let {
-            val newRequest = chain.request().newBuilder()
-                .addHeader("Authorization", requireNotNull(it.token))
-                .build()
-            return@addInterceptor chain.proceed(newRequest)
-        }
-        chain.proceed(chain.request())
-    }
-    .addInterceptor(logging)
-    .build()
-
-private val retrofit = Retrofit.Builder()
-    .addConverterFactory(GsonConverterFactory.create())
-    .baseUrl(BASE_URL)
-    .client(okhttp)
-    .build()
+//    .build()
+//
+//private val retrofit = Retrofit.Builder()
+//    .addConverterFactory(GsonConverterFactory.create())
+//    .baseUrl(BASE_URL)
+//    .client(okhttp)
+//    .build()
 
 
 interface PostApiService {
@@ -82,8 +81,8 @@ interface PostApiService {
     suspend fun uploadMedia(@Part media: MultipartBody.Part): Response<Media>
 }
 
-object PostApi {
-    val service: PostApiService by lazy {
-        retrofit.create()
-    }
-}
+//object PostApi {
+//    val service: PostApiService by lazy {
+//        retrofit.create()
+//    }
+//}
