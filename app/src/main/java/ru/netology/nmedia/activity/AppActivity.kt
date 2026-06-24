@@ -65,13 +65,11 @@ class AppActivity : AppCompatActivity() {
                 val navController = findNavController(R.id.main)
                 return when (item.itemId) {
                     R.id.signin -> {
-//                        AppAuth.getInstance().setAuth(5, "x-token")
                         navController.navigate(R.id.action_feedFragment_to_signInFragment)
                         true
                     }
 
                     R.id.signup -> {
-//                        AppAuth.getInstance().setAuth(5, "x-token")
                         auth.setAuth(5, "x-token")
                         true
                     }
@@ -80,7 +78,6 @@ class AppActivity : AppCompatActivity() {
                         if (navController.currentDestination?.id == R.id.newPostActivity) {
                             showSignOutConfirmation(navController)
                         } else {
-//                            AppAuth.getInstance().removeAuth()
                             auth.removeAuth()
                         }
                         true
@@ -97,8 +94,6 @@ class AppActivity : AppCompatActivity() {
             .addOnFailureListener { e ->
                 Log.w("FCM Token", "token error", e)
             }
-
-//        AppAuth.getInstance().setAuth(5, "x-token")
     }
 
     //    запрос на проверку, разрешена ли отсылка уведомлений. Требования google, по документации

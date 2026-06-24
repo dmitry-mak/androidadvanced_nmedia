@@ -13,7 +13,6 @@ interface PostRepository {
 
     fun getNewer (id: Long): Flow<Int>
 
-    //    suspend fun getAllDataAsync():List<Post>
     suspend fun getAllDataAsync()
 
     suspend fun showNewer()

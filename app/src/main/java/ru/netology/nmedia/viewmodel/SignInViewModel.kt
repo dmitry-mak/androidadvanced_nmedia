@@ -21,7 +21,6 @@ data class SignInState(
 
 @HiltViewModel
 class SignInViewModel @Inject constructor(
-//    private val repository: AuthRepository = AuthRepository()
     private val repository: AuthRepository,
     private val auth: AppAuth
 ) : ViewModel() {
@@ -44,7 +43,6 @@ class SignInViewModel @Inject constructor(
             runCatching {
                 repository.authenticate(loginTrimmed, passwordTrimmed)
             }.onSuccess { (id, token) ->
-//                AppAuth.getInstance().setAuth(id, token)
                 auth.setAuth(id, token)
                 _state.value = SignInState(success = true)
             }.onFailure { error ->

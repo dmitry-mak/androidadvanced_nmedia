@@ -1,12 +1,9 @@
 package ru.netology.nmedia.viewmodel
 
-import android.app.Application
 import android.net.Uri
-import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.application
 import androidx.lifecycle.asLiveData
 import androidx.lifecycle.switchMap
 import androidx.lifecycle.viewModelScope
@@ -18,7 +15,6 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import retrofit2.HttpException
 import ru.netology.nmedia.auth.AppAuth
-import ru.netology.nmedia.db.AppDb
 import ru.netology.nmedia.dto.MediaUpload
 import java.io.IOException
 import ru.netology.nmedia.dto.Post
@@ -26,7 +22,6 @@ import ru.netology.nmedia.model.FeedModel
 import ru.netology.nmedia.model.FeedModelState
 import ru.netology.nmedia.model.PhotoModel
 import ru.netology.nmedia.repository.PostRepository
-import ru.netology.nmedia.repository.PostRepositoryImpl
 import java.io.File
 import javax.inject.Inject
 
@@ -45,23 +40,13 @@ private val noPhoto = PhotoModel()
 
 @HiltViewModel
 class PostViewModel @Inject constructor(
-//    application: Application
     private val repository: PostRepository,
     auth: AppAuth
 ) : ViewModel() {
 
-    //    private val repository: PostRepository = PostRepositoryImpl(
-//        AppDb.getInstance(application).postDao
-//    )
     private val _state = MutableLiveData(FeedModelState())
     val state: LiveData<FeedModelState>
         get() = _state
-
-//    val data: LiveData<FeedModel> = repository.posts.map {
-//        FeedModel(posts = it, empty = it.isEmpty())
-//    }
-//        .catch { it.printStackTrace() }
-//        .asLiveData(Dispatchers.Default)
 
     val data: LiveData<FeedModel> = auth.authState
         .combine(repository.posts) { (myId, _), posts ->
@@ -183,20 +168,6 @@ class PostViewModel @Inject constructor(
         }
         lastRetryAction = { save(text) }
 
-//        viewModelScope.launch {
-//            runCatching {
-//                repository.saveAsync(current.copy(content = trimmed))
-//            }.onSuccess {
-//                edited.value = empty
-//                clearDraftPost()
-//                _state.value = FeedModelState()
-//                lastRetryAction = null
-//            }.onFailure { error ->
-//                _state.value = FeedModelState(error = true)
-//                handleError(error)
-//            }
-//        }
-
         viewModelScope.launch {
             runCatching {
                 val post = current.copy(content = trimmed)
@@ -231,18 +202,15 @@ class PostViewModel @Inject constructor(
     }
 
     fun setDraftPost(text: String) {
-//        draftPost.postValue(text)
         draftPost.value = text
     }
 
     fun clearDraftPost() {
-//        draftPost.postValue("")
         draftPost.value = ""
     }
 
     fun changePhoto(uri: Uri?, file: File?) {
         _photo.value = PhotoModel(uri, file)
-//        _photo.postValue(PhotoModel(uri, file))
     }
 
     fun handleError(error: Throwable) {
@@ -260,7 +228,6 @@ class PostViewModel @Inject constructor(
             else -> "Ошибка. Попробуйте снова"
         }
         _actionError.postValue(message)
-//        _actionError.value = message
     }
 
     fun retryLastAction() {

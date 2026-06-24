@@ -47,13 +47,6 @@ class AppAuth @Inject constructor(
 
         private const val KEY_ID = "id"
         private const val KEY_TOKEN = "token"
-//        private var INSTANCE: AppAuth? = null
-
-//        fun getInstance() = INSTANCE ?: throw RuntimeException("call init")
-//
-//        fun init(context: Context) {
-//            INSTANCE = AppAuth(context)
-//        }
     }
 }
 

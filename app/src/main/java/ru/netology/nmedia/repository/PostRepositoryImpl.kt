@@ -28,11 +28,6 @@ class PostRepositoryImpl @Inject constructor(
     private val apiService: PostApiService
 ) : PostRepository {
 
-    //    override val posts = dao.getAll().map {
-//        it.map {
-//            it.toDto()
-//        }
-//    }
     override val posts: Flow<List<Post>> = dao.getAll()
         .map { entities ->
             entities.map(PostEntity::toDto)
@@ -43,17 +38,9 @@ class PostRepositoryImpl @Inject constructor(
         dao.getHiddenCount()
             .flowOn(Dispatchers.Default)
 
-
-//    override suspend fun getAllDataAsync() {
-//        val posts = PostApi.service.getAllData()
-//        dao.clear()
-//        dao.insert(posts.map(PostEntity::fromDto))
-//    }
-
     override suspend fun getAllDataAsync() {
         val maxId = dao.getMaxId()
         val hiddenPostsId = dao.getHiddenPostsId().toSet()
-//        val posts = PostApi.service.getAllData()
         val posts = apiService.getAllData()
         dao.clear()
 
@@ -76,7 +63,6 @@ class PostRepositoryImpl @Inject constructor(
             delay(10_000L)
 
             val lastId = dao.getMaxId() ?: id
-//            val response = PostApi.service.getNewer(lastId)
             val response = apiService.getNewer(lastId)
 
             if (!response.isSuccessful) {
@@ -101,10 +87,8 @@ class PostRepositoryImpl @Inject constructor(
         dao.likeById(id)
         try {
             val post = if (isLiked) {
-//                PostApi.service.unlikeById(id)
                 apiService.unlikeById(id)
             } else {
-//                PostApi.service.likeById(id)
                 apiService.likeById(id)
             }
 
@@ -120,12 +104,10 @@ class PostRepositoryImpl @Inject constructor(
 
     override suspend fun removeByIdAsync(id: Long) {
         dao.removeById(id)
-//        PostApi.service.deleteById(id)
         apiService.deleteById(id)
     }
 
     override suspend fun saveAsync(post: Post): Post {
-//        val saved = PostApi.service.save(post)
         val saved = apiService.save(post)
         dao.insert(PostEntity.fromDto(saved))
         return saved
@@ -157,7 +139,6 @@ class PostRepositoryImpl @Inject constructor(
             "file", upload.file.name, upload.file.asRequestBody()
         )
 
-//        val response = PostApi.service.uploadMedia(media)
         val response = apiService.uploadMedia(media)
         if (!response.isSuccessful) {
             throw HttpException(response)
