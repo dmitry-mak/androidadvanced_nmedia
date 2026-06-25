@@ -30,6 +30,9 @@ class AppActivity : AppCompatActivity() {
 
     @Inject
     lateinit var auth: AppAuth
+
+    @Inject
+    lateinit var firebaseMessaging: FirebaseMessaging
     private val viewModel by viewModels<AuthViewModel>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -88,7 +91,13 @@ class AppActivity : AppCompatActivity() {
             }
         })
 
-        FirebaseMessaging.getInstance().token.addOnSuccessListener { token ->
+//        FirebaseMessaging.getInstance().token.addOnSuccessListener { token ->
+//            Log.d("FCM Token", token)
+//        }
+//            .addOnFailureListener { e ->
+//                Log.w("FCM Token", "token error", e)
+//            }
+        firebaseMessaging.token.addOnSuccessListener { token ->
             Log.d("FCM Token", token)
         }
             .addOnFailureListener { e ->
