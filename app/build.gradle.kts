@@ -79,6 +79,7 @@ dependencies {
     implementation(libs.glide)
     implementation(libs.picasso)
 
+    implementation(libs.androidx.paging.runtime.ktx)
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
     testImplementation(libs.junit)

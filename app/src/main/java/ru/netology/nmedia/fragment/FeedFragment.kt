@@ -9,10 +9,16 @@ import androidx.appcompat.app.AlertDialog
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
+import androidx.paging.LoadState
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
 import ru.netology.nmedia.R
 import ru.netology.nmedia.adapter.OnInteractionListener
 import ru.netology.nmedia.adapter.PostAdapter
@@ -102,53 +108,119 @@ class FeedFragment : Fragment() {
         binding.list.adapter = adapter
 
         binding.retryButton.setOnClickListener {
-            viewModel.load()
+//            viewModel.load()
+            adapter.retry()
         }
     }
 
+//    private fun setupObservers() {
+//        viewModel.data.observe(viewLifecycleOwner) { model ->
+//            adapter.submitList(model.posts) {
+//                if (scrollToTopAfterUpdate) {
+//                    binding.list.smoothScrollToPosition(0)
+//                    scrollToTopAfterUpdate = false
+//                }
+//            }
+//            binding.empty.isVisible = model.empty
+//        }
+//        viewModel.state.observe(viewLifecycleOwner) { state ->
+//            binding.errorGroup.isVisible = state.error
+//            binding.progress.isVisible = state.isLoading
+//            binding.swipeRefresh.isRefreshing = state.refreshing
+//        }
+//        viewModel.actionError.observe(viewLifecycleOwner) { message ->
+//            message?.let {
+//                Snackbar
+//                    .make(binding.root, it, Snackbar.LENGTH_LONG)
+//                    .setAction("Повторить") {
+//                        viewModel.retryLastAction()
+//                    }
+//                    .show()
+//            }
+//        }
+//        viewModel.newerCount.observe(viewLifecycleOwner) { count ->
+//            binding.newerPosts.isVisible = count > 0
+//            binding.newerPosts.text = getString(R.string.newer_posts_notification, count)
+////            println(it)
+//        }
+//        viewModel.newerPolling.observe(viewLifecycleOwner) {
+//
+//        }
+//        findNavController().currentBackStackEntry
+//            ?.savedStateHandle
+//            ?.getLiveData<Boolean>("loginSuccess")
+//            ?.observe(viewLifecycleOwner) { completedSignIn ->
+//                if (completedSignIn == true) {
+//                    handlePendingAction()
+//                    findNavController().currentBackStackEntry
+//                        ?.savedStateHandle
+//                        ?.set("loginSuccess", false)
+//                }
+//            }
+//    }
+
     private fun setupObservers() {
-        viewModel.data.observe(viewLifecycleOwner) { model ->
-            adapter.submitList(model.posts) {
-                if (scrollToTopAfterUpdate) {
-                    binding.list.smoothScrollToPosition(0)
-                    scrollToTopAfterUpdate = false
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.data.collectLatest { pagingData ->
+                    adapter.submitData(pagingData)
                 }
             }
-            binding.empty.isVisible = model.empty
+        }
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                adapter.loadStateFlow.collectLatest { state ->
+                    binding.swipeRefresh.isRefreshing =
+                        state.refresh is LoadState.Loading ||
+                                state.prepend is LoadState.Loading ||
+                                state.append is LoadState.Loading
+                    binding.errorGroup.isVisible = state.refresh is LoadState.Error
+                    binding.empty.isVisible =
+                        state.refresh is LoadState.NotLoading && adapter.itemCount == 0
+
+                    if (scrollToTopAfterUpdate && state.refresh is LoadState.NotLoading) {
+                        binding.list.smoothScrollToPosition(0)
+                        scrollToTopAfterUpdate = false
+                    }
+                }
+            }
         }
         viewModel.state.observe(viewLifecycleOwner) { state ->
-            binding.errorGroup.isVisible = state.error
-            binding.progress.isVisible = state.isLoading
-            binding.swipeRefresh.isRefreshing = state.refreshing
+
+            if (state.error) binding.errorGroup.isVisible = true
         }
-        viewModel.actionError.observe(viewLifecycleOwner) { message ->
-            message?.let {
+
+        viewModel.actionError.observe(viewLifecycleOwner) { errorMessage ->
+            errorMessage?.let {
                 Snackbar
                     .make(binding.root, it, Snackbar.LENGTH_LONG)
-                    .setAction("Повторить") {
+                    .setAction("Retry") {
                         viewModel.retryLastAction()
                     }
                     .show()
             }
         }
+
         viewModel.newerCount.observe(viewLifecycleOwner) { count ->
             binding.newerPosts.isVisible = count > 0
             binding.newerPosts.text = getString(R.string.newer_posts_notification, count)
-//            println(it)
         }
-        viewModel.newerPolling.observe(viewLifecycleOwner) {
 
+        viewModel.newerPolling.observe(viewLifecycleOwner) {
         }
+
         findNavController().currentBackStackEntry
             ?.savedStateHandle
             ?.getLiveData<Boolean>("loginSuccess")
-            ?.observe(viewLifecycleOwner){ completedSignIn ->
-                if (completedSignIn == true){
+            ?.observe(viewLifecycleOwner) { completedSignIn ->
+                if (completedSignIn == true) {
                     handlePendingAction()
                     findNavController().currentBackStackEntry
                         ?.savedStateHandle
                         ?.set("loginSuccess", false)
                 }
+
             }
     }
 
@@ -163,13 +235,15 @@ class FeedFragment : Fragment() {
         }
 
         binding.swipeRefresh.setOnRefreshListener {
-            viewModel.refresh()
+//            viewModel.refresh()
+            adapter.refresh()
         }
 
         binding.newerPosts.setOnClickListener {
             scrollToTopAfterUpdate = true
             viewModel.showNewer()
 //            binding.list.smoothScrollToPosition(0)
+            adapter.refresh()
         }
     }
 
