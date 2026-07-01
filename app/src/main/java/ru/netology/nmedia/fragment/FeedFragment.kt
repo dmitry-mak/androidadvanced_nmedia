@@ -39,6 +39,7 @@ class FeedFragment : Fragment() {
     private var scrollToTopAfterUpdate = false
     private var authDialog: AlertDialog? = null
     private var pendingAction: PendingAction? = null
+    private var lastAuthState: Boolean? = false
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -108,56 +109,10 @@ class FeedFragment : Fragment() {
         binding.list.adapter = adapter
 
         binding.retryButton.setOnClickListener {
-//            viewModel.load()
             adapter.retry()
         }
     }
 
-//    private fun setupObservers() {
-//        viewModel.data.observe(viewLifecycleOwner) { model ->
-//            adapter.submitList(model.posts) {
-//                if (scrollToTopAfterUpdate) {
-//                    binding.list.smoothScrollToPosition(0)
-//                    scrollToTopAfterUpdate = false
-//                }
-//            }
-//            binding.empty.isVisible = model.empty
-//        }
-//        viewModel.state.observe(viewLifecycleOwner) { state ->
-//            binding.errorGroup.isVisible = state.error
-//            binding.progress.isVisible = state.isLoading
-//            binding.swipeRefresh.isRefreshing = state.refreshing
-//        }
-//        viewModel.actionError.observe(viewLifecycleOwner) { message ->
-//            message?.let {
-//                Snackbar
-//                    .make(binding.root, it, Snackbar.LENGTH_LONG)
-//                    .setAction("Повторить") {
-//                        viewModel.retryLastAction()
-//                    }
-//                    .show()
-//            }
-//        }
-//        viewModel.newerCount.observe(viewLifecycleOwner) { count ->
-//            binding.newerPosts.isVisible = count > 0
-//            binding.newerPosts.text = getString(R.string.newer_posts_notification, count)
-////            println(it)
-//        }
-//        viewModel.newerPolling.observe(viewLifecycleOwner) {
-//
-//        }
-//        findNavController().currentBackStackEntry
-//            ?.savedStateHandle
-//            ?.getLiveData<Boolean>("loginSuccess")
-//            ?.observe(viewLifecycleOwner) { completedSignIn ->
-//                if (completedSignIn == true) {
-//                    handlePendingAction()
-//                    findNavController().currentBackStackEntry
-//                        ?.savedStateHandle
-//                        ?.set("loginSuccess", false)
-//                }
-//            }
-//    }
 
     private fun setupObservers() {
         viewLifecycleOwner.lifecycleScope.launch {
@@ -186,9 +141,16 @@ class FeedFragment : Fragment() {
                 }
             }
         }
-        viewModel.state.observe(viewLifecycleOwner) { state ->
 
-            if (state.error) binding.errorGroup.isVisible = true
+
+        authViewModel.data.observe(viewLifecycleOwner){ authState ->
+            val authenticatedNow = !authState.token.isNullOrEmpty()
+//            val authStateChanged = lastAuthState != null && lastAuthState != authenticatedNow
+           val authStateChanged = lastAuthState?.let { it != authenticatedNow } ?: false
+            lastAuthState = authenticatedNow
+            if(authStateChanged){
+                adapter.refresh()
+            }
         }
 
         viewModel.actionError.observe(viewLifecycleOwner) { errorMessage ->
@@ -235,14 +197,12 @@ class FeedFragment : Fragment() {
         }
 
         binding.swipeRefresh.setOnRefreshListener {
-//            viewModel.refresh()
             adapter.refresh()
         }
 
         binding.newerPosts.setOnClickListener {
             scrollToTopAfterUpdate = true
             viewModel.showNewer()
-//            binding.list.smoothScrollToPosition(0)
             adapter.refresh()
         }
     }
