@@ -16,6 +16,8 @@ import retrofit2.HttpException
 import ru.netology.nmedia.api.PostApiService
 //import ru.netology.nmedia.api.PostApi
 import ru.netology.nmedia.dao.PostDao
+import ru.netology.nmedia.dao.PostRemoteKeyDao
+import ru.netology.nmedia.db.AppDb
 import ru.netology.nmedia.dto.Attachment
 import ru.netology.nmedia.dto.AttachmentType
 import ru.netology.nmedia.dto.Media
@@ -29,7 +31,9 @@ import kotlin.collections.map
 @Singleton
 class PostRepositoryImpl @Inject constructor(
     private val dao: PostDao,
-    private val apiService: PostApiService
+    private val apiService: PostApiService,
+    postRemoteKeyDao: PostRemoteKeyDao,
+    appDb: AppDb
 ) : PostRepository {
 
     //    override val posts: Flow<List<Post>> = dao.getAll()
@@ -45,7 +49,12 @@ class PostRepositoryImpl @Inject constructor(
         pagingSourceFactory = {
             dao.getPagingSource()
         },
-        remoteMediator = PostRemoteMediator(apiService = apiService, postDao = dao)
+        remoteMediator = PostRemoteMediator(
+            apiService = apiService,
+            postDao = dao,
+            postRemoteKeyDao = postRemoteKeyDao,
+            appDb = appDb
+        )
     ).flow
         .map {
             it.map {

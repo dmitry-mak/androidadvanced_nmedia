@@ -10,6 +10,9 @@ import ru.netology.nmedia.db.AppDb
 @InstallIn(SingletonComponent::class)
 object DaoModule {
     @Provides
-    @Suppress
+//    @Suppress
     fun providePostDao(db: AppDb): PostDao = db.postDao()
+
+    @Provides
+    fun providePostRemoteKeyDao(db: AppDb): PostRemoteKeyDao = db.postRemoteKeyDao()
 }
