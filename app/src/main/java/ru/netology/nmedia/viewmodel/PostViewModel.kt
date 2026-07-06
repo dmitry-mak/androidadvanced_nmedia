@@ -7,10 +7,14 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.asLiveData
 import androidx.lifecycle.switchMap
 import androidx.lifecycle.viewModelScope
+import androidx.paging.PagingData
+import androidx.paging.map
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import retrofit2.HttpException
@@ -48,23 +52,54 @@ class PostViewModel @Inject constructor(
     val state: LiveData<FeedModelState>
         get() = _state
 
-    val data: LiveData<FeedModel> = auth.authState
-        .combine(repository.posts) { (myId, _), posts ->
-            posts.map { it.copy(ownedByMe = myId == it.authorId) }
+    //    val data: LiveData<FeedModel> = auth.authState
+//        .combine(repository.posts) { (myId, _), posts ->
+//            posts.map { it.copy(ownedByMe = myId == it.authorId) }
+//        }
+//        .map(::FeedModel)
+//        .asLiveData(Dispatchers.Default)
+    val data: Flow<PagingData<Post>> = auth.authState
+        .flatMapLatest { (myId, _) ->
+            repository.posts.map { pagingData ->
+                pagingData.map { post ->
+                    post.copy(ownedByMe = post.authorId == myId)
+                }
+            }
         }
-        .map(::FeedModel)
-        .asLiveData(Dispatchers.Default)
+
+    private val _singlePost = MutableLiveData<Post?>()
+    val singlePost: LiveData<Post?>
+        get() = _singlePost
+
+    fun loadPostbyId(id: Long) {
+        viewModelScope.launch {
+            runCatching {
+                repository.getById(id)
+            }.onSuccess { post ->
+                _singlePost.value = post
+            }.onFailure { error ->
+                _state.value = FeedModelState(error = true)
+                handleError(error)
+            }
+        }
+    }
 
     val newerCount: LiveData<Int> = repository.newerCount
         .asLiveData(Dispatchers.Default)
 
-    val newerPolling: LiveData<Int> = data.switchMap {
-        repository.getNewer(it.posts.firstOrNull()?.id ?: 0L)
-            .catch {
-                _state.postValue(FeedModelState(error = true))
-            }
-            .asLiveData(Dispatchers.Default)
-    }
+    //    val newerPolling: LiveData<Int> = data.switchMap {
+//        repository.getNewer(it.posts.firstOrNull()?.id ?: 0L)
+//            .catch {
+//                _state.postValue(FeedModelState(error = true))
+//            }
+//            .asLiveData(Dispatchers.Default)
+//    }
+    val newerPolling = repository.getNewer(0L)
+        .catch {
+            _state.postValue(FeedModelState(error = true))
+            emit(0)
+        }.asLiveData(Dispatchers.Default)
+
     private val _actionError = MutableLiveData<String?>()
     val actionError: LiveData<String?>
         get() = _actionError

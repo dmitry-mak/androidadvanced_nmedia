@@ -1,5 +1,6 @@
 package ru.netology.nmedia.repository
 
+import androidx.paging.PagingData
 import kotlinx.coroutines.flow.Flow
 import ru.netology.nmedia.dto.Media
 import ru.netology.nmedia.dto.MediaUpload
@@ -7,8 +8,9 @@ import ru.netology.nmedia.dto.Post
 
 interface PostRepository {
 
-    val posts: Flow<List<Post>>
+//    val posts: Flow<List<Post>>
 
+    val posts : Flow<PagingData<Post>>
     val newerCount: Flow<Int>
 
     fun getNewer (id: Long): Flow<Int>
@@ -16,6 +18,8 @@ interface PostRepository {
     suspend fun getAllDataAsync()
 
     suspend fun showNewer()
+
+    suspend fun getById(id: Long): Post
 
     suspend fun likeAsync(
         id: Long,

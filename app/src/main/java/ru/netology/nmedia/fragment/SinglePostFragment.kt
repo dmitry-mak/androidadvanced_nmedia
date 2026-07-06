@@ -34,14 +34,23 @@ class SinglePostFragment : Fragment() {
         val binding = FragmentSinglePostBinding.inflate(inflater, container, false)
         val postId = requireArguments().getLong(POST_ID)
 
-        viewModel.data.observe(viewLifecycleOwner) { state ->
-            val post = state.posts.firstOrNull { it.id == postId }
+//        viewModel.data.observe(viewLifecycleOwner) { state ->
+//            val post = state.posts.firstOrNull { it.id == postId }
+//            if (post == null) {
+//                findNavController().navigateUp()
+//                return@observe
+//            }
+//            bindPost(binding, post)
+//        }
+        viewModel.singlePost.observe(viewLifecycleOwner) { post ->
             if (post == null) {
                 findNavController().navigateUp()
                 return@observe
             }
             bindPost(binding, post)
         }
+        viewModel.loadPostbyId(postId)
+
         return binding.root
     }
 

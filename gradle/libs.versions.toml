@@ -26,6 +26,7 @@ firebase = "34.9.0"
 playServices = "18.10.0"
 desugaring = "2.1.5"
 swiperefreshlayout = "1.2.0"
+pagingRuntimeKtx="3.3.6"
 
 ucrop = "2.2.11"
 imagepicker = "2.1"
@@ -36,6 +37,7 @@ hilt = "2.58"
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 androidx-swiperefreshlayout = { module = "androidx.swiperefreshlayout:swiperefreshlayout", version.ref = "swiperefreshlayout" }
+androidx-paging-runtime-ktx = {module="androidx.paging:paging-runtime-ktx", version.ref="pagingRuntimeKtx"}
 glide = { module = "com.github.bumptech.glide:glide", version.ref = "glide" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
