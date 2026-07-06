@@ -14,7 +14,6 @@ import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.asRequestBody
 import retrofit2.HttpException
 import ru.netology.nmedia.api.PostApiService
-//import ru.netology.nmedia.api.PostApi
 import ru.netology.nmedia.dao.PostDao
 import ru.netology.nmedia.dao.PostRemoteKeyDao
 import ru.netology.nmedia.db.AppDb
@@ -36,10 +35,6 @@ class PostRepositoryImpl @Inject constructor(
     appDb: AppDb
 ) : PostRepository {
 
-    //    override val posts: Flow<List<Post>> = dao.getAll()
-//        .map { entities ->
-//            entities.map(PostEntity::toDto)
-//        }.flowOn(Dispatchers.Default)
     @OptIn(ExperimentalPagingApi::class)
     override val posts = Pager(
         config = PagingConfig(
@@ -58,7 +53,8 @@ class PostRepositoryImpl @Inject constructor(
     ).flow
         .map {
             it.map {
-                it.toDto()
+//                it.toDto()
+            entity -> entity.toDto()
             }
         }
 
@@ -67,19 +63,17 @@ class PostRepositoryImpl @Inject constructor(
             .flowOn(Dispatchers.Default)
 
     override suspend fun getAllDataAsync() {
-        val maxId = dao.getMaxId()
-        val hiddenPostsId = dao.getHiddenPostsId().toSet()
-        val posts = apiService.getAllData()
-        dao.clear()
-
-        dao.insert(
-            posts.map { post ->
-                PostEntity.fromDto(
-                    post = post,
-                    hidden = post.id in hiddenPostsId || (maxId != null && post.id > maxId)
-                )
-            }
-        )
+        val latestLocalId = dao.getMaxId()
+        if(latestLocalId ==null){
+            val posts  = apiService.getAllData()
+            dao.insert(posts.map { post ->
+                PostEntity.fromDto(post = post)
+            })
+        }else{
+            val response = apiService.getAfter(latestLocalId,10)
+            if(!response.isSuccessful) throw HttpException(response)
+            dao.insert(response.body().orEmpty().map(PostEntity::fromDto))
+        }
     }
 
     override suspend fun showNewer() {

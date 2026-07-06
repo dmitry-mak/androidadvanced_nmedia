@@ -2,20 +2,16 @@ package ru.netology.nmedia.repository
 
 import androidx.paging.ExperimentalPagingApi
 import androidx.paging.LoadType
-import androidx.paging.PagingSource
 import androidx.paging.PagingState
 import androidx.paging.RemoteMediator
 import androidx.room.withTransaction
-
 import retrofit2.HttpException
 import ru.netology.nmedia.api.PostApiService
 import ru.netology.nmedia.dao.PostDao
 import ru.netology.nmedia.dao.PostRemoteKeyDao
 import ru.netology.nmedia.db.AppDb
-import ru.netology.nmedia.dto.Post
 import ru.netology.nmedia.entity.PostEntity
 import ru.netology.nmedia.entity.PostRemoteKeyEntity
-import java.io.IOException
 
 @OptIn(ExperimentalPagingApi::class)
 class PostRemoteMediator(
@@ -25,37 +21,31 @@ class PostRemoteMediator(
     private val appDb: AppDb,
 ) : RemoteMediator<Int, PostEntity>() {
 
-//    override fun getRefreshKey(state: PagingState<Long, Post>): Long? = null
 
     override suspend fun load(
         loadType: LoadType,
         state: PagingState<Int, PostEntity>
     ): MediatorResult {
-//        TODO("Not yet implemented")
-
-//    override suspend fun load(params: LoadParams<Long>): LoadResult<Long, Post> {
         try {
             val result = when (loadType) {
                 LoadType.REFRESH -> {
-                    apiService.getLatest(state.config.pageSize)
+                    val maxId = postRemoteKeyDao.max()
+                    if (maxId == null) {
+                        apiService.getLatest(state.config.pageSize)
+                    } else {
+                        apiService.getAfter(maxId, state.config.pageSize)
+                    }
+//                    apiService.getLatest(state.config.pageSize)
                 }
 
                 LoadType.APPEND -> {
-//                    val id = state.lastItemOrNull()?.id ?: return MediatorResult.Success(false)
-                    val id = postRemoteKeyDao.min() ?: return MediatorResult.Success(false)
-                    apiService.getBefore(id, state.config.pageSize)
-                    //                    apiService.getBefore(id = params.key, count = params.loadSize)
+                    val minId = postRemoteKeyDao.min() ?: return MediatorResult.Success(
+                        endOfPaginationReached = false
+                    )
+                    apiService.getBefore(minId, state.config.pageSize)
                 }
 
-                LoadType.PREPEND -> {
-//                    val id = state.firstItemOrNull()?.id ?: return MediatorResult.Success(false)
-                    val id = postRemoteKeyDao.max() ?: return MediatorResult.Success(false)
-                    apiService.getAfter(id, state.config.pageSize)
-
-                }
-//                    return LoadResult.Page(
-//                    data = emptyList(), nextKey = null, prevKey = null
-//                )
+                LoadType.PREPEND -> return MediatorResult.Success(endOfPaginationReached = true)
             }
 
             if (!result.isSuccessful) {
@@ -68,32 +58,37 @@ class PostRemoteMediator(
             appDb.withTransaction {
                 when (loadType) {
                     LoadType.REFRESH -> {
-                        postDao.clear()
-                        postRemoteKeyDao.insert(
-                            listOf(
+                        if (body.isEmpty()) return@withTransaction
+
+                        val wasEmpty = postRemoteKeyDao.max() == null
+                        if (wasEmpty) {
+                            postRemoteKeyDao.insert(
+                                listOf(
+                                    PostRemoteKeyEntity(
+                                        PostRemoteKeyEntity.KeyType.AFTER,
+                                        body.first().id
+                                    ),
+                                    PostRemoteKeyEntity(
+                                        PostRemoteKeyEntity.KeyType.BEFORE,
+                                        body.last().id
+                                    )
+                                )
+                            )
+                        } else {
+                            postRemoteKeyDao.insert(
                                 PostRemoteKeyEntity(
                                     PostRemoteKeyEntity.KeyType.AFTER,
                                     body.first().id
-                                ),
-
-                                PostRemoteKeyEntity(
-                                    PostRemoteKeyEntity.KeyType.BEFORE,
-                                    body.last().id
                                 )
                             )
-                        )
+                        }
                     }
 
                     LoadType.PREPEND -> {
-                        postRemoteKeyDao.insert(
-                            PostRemoteKeyEntity(
-                                PostRemoteKeyEntity.KeyType.AFTER,
-                                body.first().id
-                            ),
-                        )
                     }
 
                     LoadType.APPEND -> {
+                        if (body.isEmpty()) return@withTransaction
                         postRemoteKeyDao.insert(
                             PostRemoteKeyEntity(
                                 PostRemoteKeyEntity.KeyType.BEFORE,
@@ -102,28 +97,15 @@ class PostRemoteMediator(
                         )
                     }
                 }
-
-//            val nextKey = if (body.isEmpty()) null else body.last().id
-
                 postDao.insert(body.map(PostEntity::fromDto))
             }
 
+            val endOfPagination = loadType == LoadType.APPEND && body.isEmpty()
             return MediatorResult.Success(
-                body.isEmpty()
+                endOfPaginationReached = endOfPagination
             )
         } catch (e: Exception) {
             return MediatorResult.Error(e)
         }
-//            val data = result.body().orEmpty()
-//            return LoadResult.Page(
-//                data = data,
-//                prevKey = params.key,
-//                nextKey = data.lastOrNull()?.id
-//            )
-//        } catch (e: IOException) {
-//            return LoadResult.Error(e)
-//        } catch (e: Exception) {
-//            return LoadResult.Error(e)
-//        }
     }
 }
