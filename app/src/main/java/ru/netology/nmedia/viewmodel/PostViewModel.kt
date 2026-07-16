@@ -52,12 +52,6 @@ class PostViewModel @Inject constructor(
     val state: LiveData<FeedModelState>
         get() = _state
 
-    //    val data: LiveData<FeedModel> = auth.authState
-//        .combine(repository.posts) { (myId, _), posts ->
-//            posts.map { it.copy(ownedByMe = myId == it.authorId) }
-//        }
-//        .map(::FeedModel)
-//        .asLiveData(Dispatchers.Default)
     val data: Flow<PagingData<Post>> = auth.authState
         .flatMapLatest { (myId, _) ->
             repository.posts.map { pagingData ->
@@ -87,13 +81,6 @@ class PostViewModel @Inject constructor(
     val newerCount: LiveData<Int> = repository.newerCount
         .asLiveData(Dispatchers.Default)
 
-    //    val newerPolling: LiveData<Int> = data.switchMap {
-//        repository.getNewer(it.posts.firstOrNull()?.id ?: 0L)
-//            .catch {
-//                _state.postValue(FeedModelState(error = true))
-//            }
-//            .asLiveData(Dispatchers.Default)
-//    }
     val newerPolling = repository.getNewer(0L)
         .catch {
             _state.postValue(FeedModelState(error = true))
@@ -114,9 +101,9 @@ class PostViewModel @Inject constructor(
 
     private var lastRetryAction: (() -> Unit)? = null
 
-    init {
-        load()
-    }
+//    init {
+//        load()
+//    }
 
     fun load() {
         viewModelScope.launch {
