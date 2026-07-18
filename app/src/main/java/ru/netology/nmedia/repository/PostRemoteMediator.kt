@@ -35,23 +35,27 @@ class PostRemoteMediator(
                     } else {
                         apiService.getAfter(afterKey, state.config.pageSize)
                     }
-//                    apiService.getLatest(state.config.pageSize)
+                }
+
+                LoadType.PREPEND -> {
+                    val afterKey = postRemoteKeyDao.after() ?: return MediatorResult.Success(
+                        endOfPaginationReached = true
+                    )
+                    apiService.getAfter(afterKey, state.config.pageSize)
                 }
 
                 LoadType.APPEND -> {
                     val beforeKey = postRemoteKeyDao.before() ?: return MediatorResult.Success(
-                        endOfPaginationReached = false
+                        endOfPaginationReached = true
                     )
                     apiService.getBefore(beforeKey, state.config.pageSize)
                 }
-
-                LoadType.PREPEND -> return MediatorResult.Success(endOfPaginationReached = true)
+//                LoadType.PREPEND -> return MediatorResult.Success(endOfPaginationReached = true)
             }
 
             if (!result.isSuccessful) {
                 throw HttpException(result)
             }
-
             val body = result.body() ?: throw HttpException(result)
 
             appDb.withTransaction {
@@ -85,6 +89,13 @@ class PostRemoteMediator(
                     }
 
                     LoadType.PREPEND -> {
+                        if (body.isEmpty()) return@withTransaction
+                        postRemoteKeyDao.insert(
+                            PostRemoteKeyEntity(
+                                PostRemoteKeyEntity.KeyType.AFTER,
+                                body.first().id
+                            )
+                        )
                     }
 
                     LoadType.APPEND -> {
@@ -102,7 +113,8 @@ class PostRemoteMediator(
 
             val endOfPagination = loadType == LoadType.APPEND && body.isEmpty()
             return MediatorResult.Success(
-                endOfPaginationReached = endOfPagination
+//                endOfPaginationReached = endOfPagination
+                endOfPaginationReached = body.isEmpty()
             )
         } catch (e: Exception) {
             return MediatorResult.Error(e)

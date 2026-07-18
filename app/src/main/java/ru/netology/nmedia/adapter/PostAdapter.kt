@@ -89,7 +89,9 @@ class PostAdapter(
     ) : RecyclerView.ViewHolder(binding.root) {
         fun bind(ad: Ad) {
 //        binding.adImage.load("${BuildConfig.BASE_URL}/media/${ad.image}")
-           val adUrl = "http://10.0.2.2:9999/media/${ad.image}"
+//           val adUrl = "http://10.0.2.2:9999/media/${ad.image}"
+//            val adUrl = "${BASE_URL}media/${ad.image}"
+            val adUrl = "${BuildConfig.BASE_URL}/media/${ad.image}"
             android.util.Log.d("AD_DEBUG","Loading ad url: ${adUrl}")
             Glide.with(binding.adImage.context)
 //                .load("${BASE_URL}media/${ad.image}")
