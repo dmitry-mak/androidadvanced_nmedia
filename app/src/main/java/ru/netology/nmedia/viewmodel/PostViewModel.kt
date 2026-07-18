@@ -110,33 +110,35 @@ class PostViewModel @Inject constructor(
 //    }
 
     fun load() {
-        viewModelScope.launch {
-            _state.value = FeedModelState(isLoading = true)
-            runCatching {
-                repository.getAllDataAsync()
-            }
-                .onSuccess {
-                    _state.value = FeedModelState()
-                }.onFailure { error ->
-                    _state.value = FeedModelState(error = true)
-                    handleError(error)
-                }
-        }
+//        viewModelScope.launch {
+//            _state.value = FeedModelState(isLoading = true)
+//            runCatching {
+//                repository.getAllDataAsync()
+//            }
+//                .onSuccess {
+//                    _state.value = FeedModelState()
+//                }.onFailure { error ->
+//                    _state.value = FeedModelState(error = true)
+//                    handleError(error)
+//                }
+//        }
+        _state.value == FeedModelState()
     }
 
     fun refresh() {
-        viewModelScope.launch {
-            _state.value = FeedModelState(refreshing = true)
-
-            runCatching {
-                repository.getAllDataAsync()
-            }.onSuccess {
-                _state.value = FeedModelState()
-            }.onFailure { error ->
-                _state.value = FeedModelState(error = true)
-                handleError(error)
-            }
-        }
+//        viewModelScope.launch {
+//            _state.value = FeedModelState(refreshing = true)
+//
+//            runCatching {
+//                repository.getAllDataAsync()
+//            }.onSuccess {
+//                _state.value = FeedModelState()
+//            }.onFailure { error ->
+//                _state.value = FeedModelState(error = true)
+//                handleError(error)
+//            }
+//        }
+        _state.value == FeedModelState()
     }
 
     fun showNewer() {

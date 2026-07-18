@@ -79,9 +79,7 @@ class PostRepositoryImpl @Inject constructor(
         val latestLocalId = dao.getMaxId()
         if (latestLocalId == null) {
             val posts = apiService.getAllData()
-            dao.insert(posts.map { post ->
-                PostEntity.fromDto(post = post)
-            })
+            dao.insert(posts.map(PostEntity::fromDto))
         } else {
             val response = apiService.getAfter(latestLocalId, 10)
             if (!response.isSuccessful) throw HttpException(response)

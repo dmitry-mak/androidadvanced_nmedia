@@ -22,6 +22,7 @@ import kotlinx.coroutines.launch
 import ru.netology.nmedia.R
 import ru.netology.nmedia.adapter.OnInteractionListener
 import ru.netology.nmedia.adapter.PostAdapter
+import ru.netology.nmedia.adapter.PostLoadingStateAdapter
 import ru.netology.nmedia.databinding.FragmentFeedBinding
 import ru.netology.nmedia.dto.Post
 import ru.netology.nmedia.viewmodel.AuthViewModel
@@ -106,7 +107,16 @@ class FeedFragment : Fragment() {
                 )
             }
         })
-        binding.list.adapter = adapter
+//        binding.list.adapter = adapter
+
+        binding.list.adapter = adapter.withLoadStateHeaderAndFooter(
+            header = PostLoadingStateAdapter {
+                adapter.retry()
+            },
+            footer = PostLoadingStateAdapter {
+                adapter.retry()
+            }
+        )
 
         binding.retryButton.setOnClickListener {
             adapter.retry()
@@ -143,12 +153,12 @@ class FeedFragment : Fragment() {
         }
 
 
-        authViewModel.data.observe(viewLifecycleOwner){ authState ->
+        authViewModel.data.observe(viewLifecycleOwner) { authState ->
             val authenticatedNow = !authState.token.isNullOrEmpty()
 //            val authStateChanged = lastAuthState != null && lastAuthState != authenticatedNow
-           val authStateChanged = lastAuthState?.let { it != authenticatedNow } ?: false
+            val authStateChanged = lastAuthState?.let { it != authenticatedNow } ?: false
             lastAuthState = authenticatedNow
-            if(authStateChanged){
+            if (authStateChanged) {
                 adapter.refresh()
             }
         }
