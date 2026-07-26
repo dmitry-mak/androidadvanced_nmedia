@@ -3,6 +3,8 @@ package ru.netology.nmedia.repository
 import androidx.paging.ExperimentalPagingApi
 import androidx.paging.Pager
 import androidx.paging.PagingConfig
+import androidx.paging.PagingData
+import androidx.paging.insertSeparators
 import androidx.paging.map
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -17,8 +19,10 @@ import ru.netology.nmedia.api.PostApiService
 import ru.netology.nmedia.dao.PostDao
 import ru.netology.nmedia.dao.PostRemoteKeyDao
 import ru.netology.nmedia.db.AppDb
+import ru.netology.nmedia.dto.Ad
 import ru.netology.nmedia.dto.Attachment
 import ru.netology.nmedia.dto.AttachmentType
+import ru.netology.nmedia.dto.FeedItem
 import ru.netology.nmedia.dto.Media
 import ru.netology.nmedia.dto.MediaUpload
 import ru.netology.nmedia.dto.Post
@@ -26,6 +30,7 @@ import ru.netology.nmedia.entity.PostEntity
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.collections.map
+import kotlin.random.Random
 
 @Singleton
 class PostRepositoryImpl @Inject constructor(
@@ -36,7 +41,7 @@ class PostRepositoryImpl @Inject constructor(
 ) : PostRepository {
 
     @OptIn(ExperimentalPagingApi::class)
-    override val posts = Pager(
+    override val posts: Flow<PagingData<FeedItem>> = Pager(
         config = PagingConfig(
             pageSize = 10,
             enablePlaceholders = false
@@ -51,10 +56,18 @@ class PostRepositoryImpl @Inject constructor(
             appDb = appDb
         )
     ).flow
-        .map {
-            it.map {
-//                it.toDto()
-            entity -> entity.toDto()
+        .map { pagingData ->
+            pagingData.map { entity ->
+                entity.toDto() as FeedItem
+            }
+        }
+        .map { pagingData ->
+            pagingData.insertSeparators { previous, _ ->
+                if (previous?.id?.rem(5) == 0L) {
+                    Ad(Random.nextLong(), "figma.jpg")
+                } else {
+                    null
+                }
             }
         }
 
@@ -64,14 +77,12 @@ class PostRepositoryImpl @Inject constructor(
 
     override suspend fun getAllDataAsync() {
         val latestLocalId = dao.getMaxId()
-        if(latestLocalId ==null){
-            val posts  = apiService.getAllData()
-            dao.insert(posts.map { post ->
-                PostEntity.fromDto(post = post)
-            })
-        }else{
-            val response = apiService.getAfter(latestLocalId,10)
-            if(!response.isSuccessful) throw HttpException(response)
+        if (latestLocalId == null) {
+            val posts = apiService.getAllData()
+            dao.insert(posts.map(PostEntity::fromDto))
+        } else {
+            val response = apiService.getAfter(latestLocalId, 10)
+            if (!response.isSuccessful) throw HttpException(response)
             dao.insert(response.body().orEmpty().map(PostEntity::fromDto))
         }
     }

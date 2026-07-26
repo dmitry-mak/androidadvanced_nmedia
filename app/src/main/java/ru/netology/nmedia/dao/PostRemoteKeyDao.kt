@@ -9,11 +9,18 @@ import ru.netology.nmedia.entity.PostRemoteKeyEntity
 @Dao
 interface PostRemoteKeyDao {
 
-    @Query("SELECT MAX(`key`) FROM PostRemoteKeyEntity")
-    suspend fun max(): Long?
+//    @Query("SELECT MAX(`key`) FROM PostRemoteKeyEntity")
+//    suspend fun max(): Long?
 
-    @Query("SELECT MIN(`key`) FROM PostRemoteKeyEntity")
-    suspend fun min(): Long?
+    @Query("SELECT `key` FROM PostRemoteKeyEntity WHERE type = 'AFTER' LIMIT 1 ")
+    suspend fun after(): Long?
+
+    @Query("SELECT `key` FROM PostRemoteKeyEntity WHERE type = 'BEFORE' LIMIT 1 ")
+    suspend fun before(): Long?
+
+
+//    @Query("SELECT MIN(`key`) FROM PostRemoteKeyEntity")
+//    suspend fun min(): Long?
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(postRemoteKeyEntity: List<PostRemoteKeyEntity>)

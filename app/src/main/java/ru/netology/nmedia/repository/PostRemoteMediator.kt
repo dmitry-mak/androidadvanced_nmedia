@@ -29,30 +29,33 @@ class PostRemoteMediator(
         try {
             val result = when (loadType) {
                 LoadType.REFRESH -> {
-                    val maxId = postRemoteKeyDao.max()
-                    if (maxId == null) {
+                    val afterKey = postRemoteKeyDao.after()
+                    if (afterKey == null) {
                         apiService.getLatest(state.config.pageSize)
                     } else {
-                        apiService.getAfter(maxId, state.config.pageSize)
+                        apiService.getAfter(afterKey, state.config.pageSize)
                     }
-//                    apiService.getLatest(state.config.pageSize)
+                }
+
+                LoadType.PREPEND -> {
+                    val afterKey = postRemoteKeyDao.after() ?: return MediatorResult.Success(
+                        endOfPaginationReached = true
+                    )
+                    apiService.getAfter(afterKey, state.config.pageSize)
                 }
 
                 LoadType.APPEND -> {
-                    val minId = postRemoteKeyDao.min() ?: return MediatorResult.Success(
-                        endOfPaginationReached = false
+                    val beforeKey = postRemoteKeyDao.before() ?: return MediatorResult.Success(
+                        endOfPaginationReached = true
                     )
-                    apiService.getBefore(minId, state.config.pageSize)
+                    apiService.getBefore(beforeKey, state.config.pageSize)
                 }
-
-                LoadType.PREPEND -> return MediatorResult.Success(endOfPaginationReached = true)
+//                LoadType.PREPEND -> return MediatorResult.Success(endOfPaginationReached = true)
             }
 
             if (!result.isSuccessful) {
                 throw HttpException(result)
             }
-
-
             val body = result.body() ?: throw HttpException(result)
 
             appDb.withTransaction {
@@ -60,8 +63,9 @@ class PostRemoteMediator(
                     LoadType.REFRESH -> {
                         if (body.isEmpty()) return@withTransaction
 
-                        val wasEmpty = postRemoteKeyDao.max() == null
-                        if (wasEmpty) {
+                        val isFirstLoad =
+                            postRemoteKeyDao.after() == null && postRemoteKeyDao.before() == null
+                        if (isFirstLoad) {
                             postRemoteKeyDao.insert(
                                 listOf(
                                     PostRemoteKeyEntity(
@@ -85,6 +89,13 @@ class PostRemoteMediator(
                     }
 
                     LoadType.PREPEND -> {
+                        if (body.isEmpty()) return@withTransaction
+                        postRemoteKeyDao.insert(
+                            PostRemoteKeyEntity(
+                                PostRemoteKeyEntity.KeyType.AFTER,
+                                body.first().id
+                            )
+                        )
                     }
 
                     LoadType.APPEND -> {
@@ -102,7 +113,8 @@ class PostRemoteMediator(
 
             val endOfPagination = loadType == LoadType.APPEND && body.isEmpty()
             return MediatorResult.Success(
-                endOfPaginationReached = endOfPagination
+//                endOfPaginationReached = endOfPagination
+                endOfPaginationReached = body.isEmpty()
             )
         } catch (e: Exception) {
             return MediatorResult.Error(e)
