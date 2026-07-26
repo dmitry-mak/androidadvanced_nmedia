@@ -1,8 +1,11 @@
 package ru.netology.nmedia.adapter
 
+import android.animation.ObjectAnimator
+import android.animation.PropertyValuesHolder
 import android.view.ViewGroup
 import android.view.LayoutInflater
 import android.view.View
+import android.view.animation.BounceInterpolator
 import androidx.appcompat.widget.PopupMenu
 import androidx.core.view.isVisible
 import androidx.paging.PagingDataAdapter
@@ -33,7 +36,26 @@ interface OnInteractionListener {
 
 class PostAdapter(
     private val onInteractionListener: OnInteractionListener
-) : PagingDataAdapter<FeedItem, RecyclerView.ViewHolder>(PostDiffCallback) {
+) : PagingDataAdapter<FeedItem, RecyclerView.ViewHolder>(PostDiffCallback()) {
+
+    override fun onBindViewHolder(
+        holder: RecyclerView.ViewHolder,
+        position: Int,
+        payloads: List<Any?>
+    ) {
+        if (payloads.isEmpty()) {
+            onBindViewHolder(holder, position)
+            return
+        }
+        val postHolder = holder as? PostViewHolder ?: run {
+            onBindViewHolder(holder, position)
+            return
+        }
+        payloads.forEach { payload ->
+            (payload as? Payload)?.let(postHolder::bind)
+        }
+    }
+
 
     companion object {
         private const val BASE_URL = "http://10.0.2.2:9999/"
@@ -88,14 +110,11 @@ class PostAdapter(
         private val binding: CardAdBinding,
     ) : RecyclerView.ViewHolder(binding.root) {
         fun bind(ad: Ad) {
-//        binding.adImage.load("${BuildConfig.BASE_URL}/media/${ad.image}")
-//           val adUrl = "http://10.0.2.2:9999/media/${ad.image}"
-//            val adUrl = "${BASE_URL}media/${ad.image}"
             val adUrl = "${BuildConfig.BASE_URL}/media/${ad.image}"
-            android.util.Log.d("AD_DEBUG","Loading ad url: ${adUrl}")
+            android.util.Log.d("AD_DEBUG", "Loading ad url: $adUrl")
             Glide.with(binding.adImage.context)
-//                .load("${BASE_URL}media/${ad.image}")
                 .load(adUrl)
+                .timeout(10_000)
                 .placeholder(R.drawable.netology_48dp)
                 .error(R.drawable.ic_notification)
                 .into(binding.adImage)
@@ -159,6 +178,14 @@ class PostAdapter(
                 likeIcon.isChecked = post.likedByMe
                 likeIcon.text = DiffMethods.convertNumber(post.likes)
                 likeIcon.setOnClickListener {
+                    val scaleX = PropertyValuesHolder.ofFloat(View.SCALE_X, 1.0F, 1.25F, 1.0F)
+                    val scaleY = PropertyValuesHolder.ofFloat(View.SCALE_Y, 1.0F, 1.25F, 1.0F)
+                    ObjectAnimator.ofPropertyValuesHolder(it, scaleX, scaleY).apply {
+                        duration = 500
+                        repeatCount = 100
+                        interpolator = BounceInterpolator()
+                    }.start()
+
                     onInteractionListener.onLike(post)
                 }
                 shareIcon.setOnClickListener { onInteractionListener.onShare(post) }
@@ -186,9 +213,40 @@ class PostAdapter(
                 }
             }
         }
+
+        fun bind(payload: Payload) {
+            payload.likedByMe?.also { liked ->
+                binding.likeIcon.isChecked = liked
+
+                if (liked) {
+                    ObjectAnimator.ofPropertyValuesHolder(
+                        binding.likeIcon,
+                        PropertyValuesHolder.ofFloat(View.SCALE_X, 1.0F, 1.2F, 1.0F),
+                        PropertyValuesHolder.ofFloat(View.SCALE_Y, 1.0F, 1.2F, 1.0F)
+                    ).start()
+                } else {
+                    ObjectAnimator.ofFloat(
+                        binding.likeIcon,
+                        View.ROTATION,
+                        0F,
+                        360F
+                    ).start()
+                }
+            }
+
+            payload.content?.let {
+                binding.postContent.text = it
+            }
+        }
     }
 
-    object PostDiffCallback : DiffUtil.ItemCallback<FeedItem>() {
+
+    data class Payload(
+        val likedByMe: Boolean? = null,
+        val content: String? = null
+    )
+
+    class PostDiffCallback : DiffUtil.ItemCallback<FeedItem>() {
 
         override fun areItemsTheSame(oldItem: FeedItem, newItem: FeedItem): Boolean {
             if (oldItem::class != newItem::class) {
@@ -203,6 +261,18 @@ class PostAdapter(
             newItem: FeedItem
         ): Boolean {
             return oldItem == newItem
+        }
+
+        override fun getChangePayload(
+            oldItem: FeedItem,
+            newItem: FeedItem
+        ): Any? {
+            if (oldItem !is Post || newItem !is Post) return null
+
+            return Payload(
+                likedByMe = newItem.likedByMe.takeIf { it != oldItem.likedByMe },
+                content = newItem.content.takeIf { it != oldItem.content }
+            )
         }
     }
 }
